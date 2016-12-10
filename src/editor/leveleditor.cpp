@@ -195,7 +195,7 @@ void LevelEditor::run(double time, int width, int height)
     }
 
     if (mSelectedSector >= 0 && mSelectedSector < int(mLevel.sectors.size())) {
-        const auto& sector = mLevel.sectors[mSelectedSector];
+        auto sector = mLevel.sectors[mSelectedSector];
 
         ImGui::Button("Drag Sector");
         if (ImGui::IsItemActive()) {
@@ -298,15 +298,8 @@ void LevelEditor::run(double time, int width, int height)
                     adjacentPoint->pos = point->pos;
             }
 
-            if (ImGui::DragFloat("MinZ", &point->minZ, 1.0f, -std::numeric_limits<float>::max(), std::numeric_limits<float>::max())) {
-                if (adjacentPoint)
-                    adjacentPoint->minZ = point->minZ;
-            }
-
-            if (ImGui::DragFloat("MaxZ", &point->maxZ, 1.0f, -std::numeric_limits<float>::max(), std::numeric_limits<float>::max())) {
-                if (adjacentPoint)
-                    adjacentPoint->maxZ = point->maxZ;
-            }
+            ImGui::DragFloat("MinZ", &point->minZ, 1.0f, -std::numeric_limits<float>::max(), std::numeric_limits<float>::max());
+            ImGui::DragFloat("MaxZ", &point->maxZ, 1.0f, -std::numeric_limits<float>::max(), std::numeric_limits<float>::max());
 
             if (sector->points.size() > 3) {
                 if (!adjacentPoint && !adjacentSector && ImGui::Button("Delete point"))
@@ -331,19 +324,24 @@ void LevelEditor::run(double time, int width, int height)
         mSelectedPoint = -1;
     }
 
-    ImGui::InputText("New Mesh", mMeshFile, sizeof(mMeshFile));
-    ImGui::SameLine();
-    if (ImGui::Button("Create")) {
+    ImGui::InputText("Name", mMeshFile, sizeof(mMeshFile));
+    if (ImGui::Button("Create Mesh")) {
         auto staticMesh = std::make_shared<Level::StaticMesh>();
         staticMesh->meshName = mMeshFile;
         staticMesh->loadMesh();
         staticMesh->calcMatrix();
+        mSelectedMesh = int(mLevel.meshes.size());
         mLevel.meshes.emplace_back(std::move(staticMesh));
     }
 
     if (mSelectedMesh >= 0 && mSelectedMesh < int(mLevel.meshes.size())) {
-        const auto& mesh = mLevel.meshes[mSelectedMesh];
+        auto mesh = mLevel.meshes[mSelectedMesh];
         bool recalcMatrix = false;
+
+        if (ImGui::Button("Clone Mesh")) {
+            mSelectedMesh = int(mLevel.meshes.size());
+            mLevel.meshes.emplace_back(std::make_shared<Level::StaticMesh>(*mesh));
+        }
 
         if (ImGui::DragFloat3("Pos", &mesh->pos[0], 1.0f, -std::numeric_limits<float>::max(), std::numeric_limits<float>::max()))
             recalcMatrix = true;
@@ -363,6 +361,9 @@ void LevelEditor::run(double time, int width, int height)
 
         if (recalcMatrix)
             mesh->calcMatrix();
+
+        if (ImGui::Button("Delete Mesh"))
+            mLevel.meshes.erase(mLevel.meshes.begin() + mSelectedMesh);
     }
 
     ImGui::End();

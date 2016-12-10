@@ -89,16 +89,46 @@ void Level::draw3D() const
         float prev = 0.0f;
         for (size_t i = 0; i < n; i++) {
             const auto& p1 = sector->points[i];
-
-            auto adjacentSector = p1->adjacentSector.lock();
-            if (adjacentSector) {
-                continue;
-            }
-
             const auto& p2 = sector->points[(i + 1) % n];
 
             float length = glm::length(p2->pos - p1->pos) / COEFF;
             float next = prev + length;
+
+            auto adjacentSector = p1->adjacentSector.lock();
+            if (adjacentSector) {
+                auto ap1 = p1->adjacentPoint.lock();
+                auto ap2 = p2->adjacentPoint.lock();
+                if (ap1 && ap2) {
+                    drawEndPrimitive();
+
+                    if (p1->extraWallTex >= 0)
+                        drawSetTexture(floorTexture);
+                    else
+                        drawSetTexture(wallpaperTexture);
+
+                    drawBeginPrimitive(GL_TRIANGLES);
+
+                    if (p1->minZ <= ap1->minZ && p2->minZ <= ap2->minZ) {
+                        float minz1 = p1->minZ;
+                        float minz2 = p2->minZ;
+                        float maxz1 = ap1->minZ;
+                        float maxz2 = ap2->minZ;
+
+                        drawVertex3D(glm::vec3(p1->pos, minz1), glm::vec2(prev, 0.0f));
+                        auto v1 = drawVertex3D(glm::vec3(p1->pos, maxz1), glm::vec2(prev, 1.0f));
+                        auto v2 = drawVertex3D(glm::vec3(p2->pos, minz2), glm::vec2(next, 0.0f));
+                        drawIndex(v2);
+                        drawIndex(v1);
+                        drawVertex3D(glm::vec3(p2->pos, maxz2), glm::vec2(next, 1.0f));
+                    }
+
+                    drawEndPrimitive();
+
+                    drawSetTexture(wallpaperTexture);
+                    drawBeginPrimitive(GL_TRIANGLES);
+                }
+                continue;
+            }
 
             drawVertex3D(glm::vec3(p1->pos, p1->minZ), glm::vec2(prev, 0.0f));
             auto v1 = drawVertex3D(glm::vec3(p1->pos, p1->maxZ), glm::vec2(prev, 1.0f));
@@ -199,6 +229,7 @@ void Level::load(const std::string& file)
             ss >> adjacentSectorId >> adjacentPointId;
             point->adjacentSector = sectorIds[adjacentSectorId];
             point->adjacentPoint = pointIds[adjacentPointId];
+            ss >> point->extraWallTex;
         }
     }
 
@@ -259,6 +290,7 @@ void Level::save(const std::string& file) const
             ss << pointIds[point.get()];
             ss << ' ' << sectorIds[point->adjacentSector.lock().get()];
             ss << ' ' << pointIds[point->adjacentPoint.lock().get()];
+            ss << ' ' << point->extraWallTex;
             ss << std::endl;
         }
     }

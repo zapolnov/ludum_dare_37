@@ -37,6 +37,7 @@ public:
         float maxZ;
         std::weak_ptr<Sector> adjacentSector;
         std::weak_ptr<Point> adjacentPoint;
+        int extraWallTex = -1;
 
         Point()
             : pos(0.0f)
