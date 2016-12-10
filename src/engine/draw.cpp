@@ -183,6 +183,36 @@ void drawSprite(const glm::vec2& pos, const glm::vec2& size, const glm::vec2& an
     drawEndPrimitive();
 }
 
+void drawSprite(const glm::vec2& pos, const Sprite& sprite)
+{
+    drawSprite(pos, sprite.size, sprite.anchor, sprite.texture);
+}
+
+void drawBillboard(const glm::vec3& pos, const Sprite& sprite)
+{
+    const auto& vm = drawGetMatrix();
+    auto right = glm::vec3(vm[0][0], vm[1][0], vm[2][0]);
+    auto up = -glm::vec3(vm[0][1], vm[1][1], vm[2][1]);
+
+    glm::vec2 d1 = -sprite.size * sprite.anchor;
+    glm::vec2 d2 = d1 + sprite.size;
+
+    glm::vec3 p1 = pos + right * d1.x + up * d1.y;
+    glm::vec3 p2 = pos + right * d2.x + up * d1.y;
+    glm::vec3 p3 = pos + right * d1.x + up * d2.y;
+    glm::vec3 p4 = pos + right * d2.x + up * d2.y;
+
+    drawSetTexture(sprite.texture);
+    drawBeginPrimitive(GL_TRIANGLES);
+        GLushort v1 = drawVertex3D(p2, glm::vec2(1.0f, 0.0f));
+        drawVertex3D(p1, glm::vec2(0.0f, 0.0f));
+        GLushort v2 = drawVertex3D(p3, glm::vec2(0.0f, 1.0f));
+        drawIndex(v1);
+        drawIndex(v2);
+        drawVertex3D(p4, glm::vec2(1.0f, 1.0f));
+    drawEndPrimitive();
+}
+
 void drawBeginPrimitive(GLenum primitiveType)
 {
     if (currentPrimitiveType != primitiveType) {

@@ -32,6 +32,7 @@ enum GLRepeatFlags
 
 GLuint openglCreateTexture(int repeat = NoRepeat, GLenum filter = GL_LINEAR);
 GLuint openglLoadTexture(const std::string& file, int repeat = NoRepeat, GLenum filter = GL_LINEAR);
+GLuint openglLoadTextureEx(const std::string& file, int* width, int* height, int repeat = NoRepeat, GLenum filter = GL_LINEAR);
 void openglDeleteTexture(GLuint handle);
 
 GLuint openglCreateBuffer();

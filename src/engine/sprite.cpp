@@ -15,49 +15,32 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
-#ifndef LEVEL_H
-#define LEVEL_H
+#include "sprite.h"
+#include "util.h"
+#include <sstream>
 
-#include "engine/sprite.h"
-#include "menu/gamescreen.h"
-#include <glm/glm.hpp>
-#include <vector>
-
-struct Point
+Sprite spriteLoad(const std::string& file, GLenum filter)
 {
-    glm::vec2 pos;
-    float minZ;
-    float maxZ;
-};
+    std::string data = loadFile(file);
 
-struct Sector
-{
-    std::vector<Point> points;
-};
+    std::stringstream ss(data);
+    std::string textureFile;
+    glm::vec2 anchor;
+    ss >> textureFile >> anchor.x >> anchor.y;
 
-struct Object2D
-{
-    glm::vec3 pos;
+    int width = 0;
+    int height = 0;
+    GLuint texture = openglLoadTextureEx(textureFile, &width, &height, NoRepeat, filter);
+
     Sprite sprite;
-};
+    sprite.texture = texture;
+    sprite.size = glm::vec2(float(width), float(height));
+    sprite.anchor = anchor;
 
-class Level : public GameScreen
+    return sprite;
+}
+
+void spriteDelete(Sprite& sprite)
 {
-public:
-    Level();
-    ~Level();
-
-    static void loadResources();
-    static void unloadResources();
-
-    void draw2D() const;
-    void draw3D() const;
-
-    void run(double time, int width, int height) override;
-
-private:
-    std::vector<Sector> mSectors;
-    std::vector<Object2D> mObjects;
-};
-
-#endif
+    openglDeleteTexture(sprite.texture);
+}

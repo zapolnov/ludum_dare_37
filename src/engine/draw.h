@@ -18,7 +18,8 @@
 #ifndef DRAW_H
 #define DRAW_H
 
-#include "opengl.h"
+#include "engine/opengl.h"
+#include "engine/sprite.h"
 #include <glm/glm.hpp>
 
 void drawInit();
@@ -39,6 +40,8 @@ void drawPopColor();
 void drawSetTexture(GLuint texture);
 
 void drawSprite(const glm::vec2& pos, const glm::vec2& size, const glm::vec2& anchor, GLuint texture);
+void drawSprite(const glm::vec2& pos, const Sprite& sprite);
+void drawBillboard(const glm::vec3& pos, const Sprite& sprite);
 
 void drawBeginPrimitive(GLenum primitiveType);
 void drawEndPrimitive();

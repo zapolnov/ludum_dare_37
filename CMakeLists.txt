@@ -44,6 +44,8 @@ add_executable(LDGame
     src/engine/main.cpp
     src/engine/opengl.cpp
     src/engine/opengl.h
+    src/engine/sprite.cpp
+    src/engine/sprite.h
     src/engine/util.cpp
     src/engine/util.h
     src/menu/gamescreen.cpp

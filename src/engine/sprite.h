@@ -15,49 +15,20 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
-#ifndef LEVEL_H
-#define LEVEL_H
+#ifndef SPRITE_H
+#define SPRITE_H
 
-#include "engine/sprite.h"
-#include "menu/gamescreen.h"
+#include "engine/opengl.h"
 #include <glm/glm.hpp>
-#include <vector>
 
-struct Point
+struct Sprite
 {
-    glm::vec2 pos;
-    float minZ;
-    float maxZ;
+    GLuint texture;
+    glm::vec2 size;
+    glm::vec2 anchor;
 };
 
-struct Sector
-{
-    std::vector<Point> points;
-};
-
-struct Object2D
-{
-    glm::vec3 pos;
-    Sprite sprite;
-};
-
-class Level : public GameScreen
-{
-public:
-    Level();
-    ~Level();
-
-    static void loadResources();
-    static void unloadResources();
-
-    void draw2D() const;
-    void draw3D() const;
-
-    void run(double time, int width, int height) override;
-
-private:
-    std::vector<Sector> mSectors;
-    std::vector<Object2D> mObjects;
-};
+Sprite spriteLoad(const std::string& file, GLenum filter = GL_LINEAR);
+void spriteDelete(Sprite& sprite);
 
 #endif

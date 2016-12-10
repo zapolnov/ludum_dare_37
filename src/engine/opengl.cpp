@@ -55,6 +55,11 @@ GLuint openglCreateTexture(int repeat, GLenum filter)
 
 GLuint openglLoadTexture(const std::string& file, int repeat, GLenum filter)
 {
+    return openglLoadTextureEx(file, nullptr, nullptr, repeat, filter);
+}
+
+GLuint openglLoadTextureEx(const std::string& file, int* width, int* height, int repeat, GLenum filter)
+{
     std::string fileData = loadFile(file);
 
     int w = 0;
@@ -63,6 +68,11 @@ GLuint openglLoadTexture(const std::string& file, int repeat, GLenum filter)
     stbi_uc* pixels = stbi_load_from_memory(reinterpret_cast<const stbi_uc*>(fileData.data()), int(fileData.size()), &w, &h, &c, 0);
     if (!pixels)
         fatalExit(fmt() << "Unable to decode image file \"" << file << "\": " << stbi_failure_reason());
+
+    if (width)
+        *width = w;
+    if (height)
+        *height = h;
 
     GLint internalFormat;
     GLenum type, format;
