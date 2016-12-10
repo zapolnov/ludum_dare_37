@@ -18,6 +18,7 @@
 #include "util.h"
 #include "draw.h"
 #include "game.h"
+#include "mesh.h"
 #include "gui.h"
 
 #define GLFW_INCLUDE_ES2 1
@@ -115,6 +116,7 @@ int main()
 
     drawInit();
     guiInit();
+    meshInitCache();
     gameInit();
 
     prevTime = glfwGetTime();
@@ -122,6 +124,7 @@ int main()
         runFrame();
 
     gameShutdown();
+    meshShutdownCache();
     guiShutdown();
     drawShutdown();
 

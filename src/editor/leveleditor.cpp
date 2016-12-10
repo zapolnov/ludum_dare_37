@@ -28,12 +28,14 @@ LevelEditor::LevelEditor(const std::string& file)
     : mFile(file)
     , mSelectedSector(0)
     , mSelectedPoint(0)
+    , mSelectedMesh(-1)
     , mCameraDistance(200.0f)
     , mCameraHorzRotation(0.0f)
     , mCameraVertRotation(45.0f)
     , mCameraPosition(0.0f)
     , mCullFace(false)
 {
+    strcpy(mMeshFile, "");
     if (fileExists(mFile))
         mLevel.load(mFile);
     else {
@@ -189,6 +191,7 @@ void LevelEditor::run(double time, int width, int height)
         };
     if (ImGui::ListBox("Sectors", &mSelectedSector, listboxGetter, this, int(mLevel.sectors.size()), 5)) {
         mSelectedPoint = 0;
+        mSelectedMesh = -1;
     }
 
     if (mSelectedSector >= 0 && mSelectedSector < int(mLevel.sectors.size())) {
@@ -315,6 +318,51 @@ void LevelEditor::run(double time, int width, int height)
             if (ImGui::Button("Delete sector"))
                 mLevel.sectors.erase(mLevel.sectors.begin() + mSelectedSector);
         }
+    }
+
+    auto listboxGetter2 = [](void* data, int n, const char** p) -> bool {
+            const auto& mesh = reinterpret_cast<LevelEditor*>(data)->mLevel.meshes[size_t(n)];
+            buffer = fmt() << mesh->meshName << ' ' << n;
+            *p = buffer.c_str();
+            return true;
+        };
+    if (ImGui::ListBox("Meshes", &mSelectedMesh, listboxGetter2, this, int(mLevel.meshes.size()), 10)) {
+        mSelectedSector = -1;
+        mSelectedPoint = -1;
+    }
+
+    ImGui::InputText("New Mesh", mMeshFile, sizeof(mMeshFile));
+    ImGui::SameLine();
+    if (ImGui::Button("Create")) {
+        auto staticMesh = std::make_shared<Level::StaticMesh>();
+        staticMesh->meshName = mMeshFile;
+        staticMesh->loadMesh();
+        staticMesh->calcMatrix();
+        mLevel.meshes.emplace_back(std::move(staticMesh));
+    }
+
+    if (mSelectedMesh >= 0 && mSelectedMesh < int(mLevel.meshes.size())) {
+        const auto& mesh = mLevel.meshes[mSelectedMesh];
+        bool recalcMatrix = false;
+
+        if (ImGui::DragFloat3("Pos", &mesh->pos[0], 1.0f, -std::numeric_limits<float>::max(), std::numeric_limits<float>::max()))
+            recalcMatrix = true;
+
+        if (ImGui::DragFloat3("Rot", &mesh->rot[0], 1.0f, -std::numeric_limits<float>::max(), std::numeric_limits<float>::max())) {
+            for (size_t i = 0; i < 3; i++) {
+                while (mesh->rot[i] < 0.0f)
+                    mesh->rot[i] += 360.0f;
+                while (mesh->rot[i] >= 360.0f)
+                    mesh->rot[i] -= 360.0f;
+            }
+            recalcMatrix = true;
+        }
+
+        if (ImGui::DragFloat3("Scl", &mesh->scale[0], 0.1f, 0.1f, std::numeric_limits<float>::max()))
+            recalcMatrix = true;
+
+        if (recalcMatrix)
+            mesh->calcMatrix();
     }
 
     ImGui::End();

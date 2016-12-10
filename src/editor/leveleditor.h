@@ -35,11 +35,13 @@ private:
     Level mLevel;
     int mSelectedSector;
     int mSelectedPoint;
+    int mSelectedMesh;
     float mCameraDistance;
     float mCameraHorzRotation;
     float mCameraVertRotation;
     glm::vec3 mCameraPosition;
     bool mCullFace;
+    char mMeshFile[1024];
 };
 
 #endif

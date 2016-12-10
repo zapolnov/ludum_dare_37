@@ -84,4 +84,9 @@ struct Mesh
 
 extern const glm::vec3 cubeVertices[36];
 
+void meshInitCache();
+void meshShutdownCache();
+
+const std::shared_ptr<Mesh>& meshGetCached(const std::string& name);
+
 #endif

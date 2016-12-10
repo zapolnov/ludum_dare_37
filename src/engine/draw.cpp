@@ -204,7 +204,7 @@ void drawBillboard(const glm::vec3& pos, const Sprite& sprite)
     drawEndPrimitive();
 }
 
-void drawMesh(const glm::vec3& pos, const Mesh& mesh)
+void drawMesh(const Mesh& mesh)
 {
     drawPushColor(glm::vec4(1.0f));
     drawBeginPrimitive(GL_TRIANGLES);

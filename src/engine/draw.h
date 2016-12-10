@@ -44,7 +44,7 @@ void drawSetLineWidth(float width);
 void drawSprite(const glm::vec2& pos, const glm::vec2& size, const glm::vec2& anchor, GLuint texture);
 void drawSprite(const glm::vec2& pos, const Sprite& sprite);
 void drawBillboard(const glm::vec3& pos, const Sprite& sprite);
-void drawMesh(const glm::vec3& pos, const Mesh& mesh);
+void drawMesh(const Mesh& mesh);
 
 void drawBeginPrimitive(GLenum primitiveType);
 void drawEndPrimitive();

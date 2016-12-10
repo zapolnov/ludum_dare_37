@@ -71,7 +71,7 @@ void MeshEditor::run(double time, int width, int height)
         drawPopColor();
     drawEndPrimitive();
 
-    drawMesh(glm::vec3(0.0f), mMesh);
+    drawMesh(mMesh);
 
     drawEnd();
 

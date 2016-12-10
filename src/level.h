@@ -19,6 +19,7 @@
 #define LEVEL_H
 
 #include "engine/sprite.h"
+#include "engine/mesh.h"
 #include "menu/gamescreen.h"
 #include <glm/glm.hpp>
 #include <memory>
@@ -66,6 +67,19 @@ public:
         std::vector<std::shared_ptr<Point>> points;
     };
 
+    struct StaticMesh
+    {
+        glm::vec3 pos{0.0f};
+        glm::vec3 rot{0.0f};
+        glm::vec3 scale{1.0f};
+        std::string meshName;
+        glm::mat4 matrix{1.0f};
+        std::shared_ptr<Mesh> mesh;
+
+        void loadMesh();
+        void calcMatrix();
+    };
+
     struct FlatSprite
     {
         glm::vec3 pos;
@@ -73,6 +87,7 @@ public:
     };
 
     std::vector<std::shared_ptr<Sector>> sectors;
+    std::vector<std::shared_ptr<StaticMesh>> meshes;
     std::vector<std::shared_ptr<FlatSprite>> sprites;
 
     Level();

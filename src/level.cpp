@@ -29,6 +29,20 @@ static Sprite man1Sprite;
 static GLuint wallpaperTexture;
 static GLuint floorTexture;
 
+void Level::StaticMesh::loadMesh()
+{
+    mesh = meshGetCached(meshName + ".mesh");
+}
+
+void Level::StaticMesh::calcMatrix()
+{
+    matrix = glm::translate(glm::mat4(1.0f), pos);
+    matrix = glm::rotate(matrix, glm::radians(rot.x), glm::vec3(1.0f, 0.0f, 0.0f));
+    matrix = glm::rotate(matrix, glm::radians(rot.y), glm::vec3(0.0f, 1.0f, 0.0f));
+    matrix = glm::rotate(matrix, glm::radians(rot.z), glm::vec3(0.0f, 0.0f, 1.0f));
+    matrix = glm::scale(matrix, scale);
+}
+
 Level::Level()
 {
     // FIXME
@@ -36,6 +50,13 @@ Level::Level()
     object->pos = glm::vec3(0.0f);
     object->sprite = man1Sprite;
     sprites.emplace_back(object);
+
+    auto mesh = std::make_shared<StaticMesh>();
+    mesh->pos = glm::vec3(10.0f, 10.0f, 0.0f);
+    mesh->meshName = "chair";
+    mesh->loadMesh();
+    mesh->calcMatrix();
+    meshes.emplace_back(mesh);
 }
 
 Level::~Level()
@@ -113,7 +134,14 @@ void Level::draw3D() const
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    // Draw objects
+    // Draw 3D objects
+    for (const auto& object : meshes) {
+        drawPushMatrix(drawGetMatrix() * object->matrix);
+        drawMesh(*object->mesh);
+        drawPopMatrix();
+    }
+
+    // Draw 2D objects
     for (const auto& object : sprites)
         drawBillboard(object->pos, object->sprite);
     drawFlush();
@@ -176,6 +204,22 @@ void Level::load(const std::string& file)
 
     n = 0;
     ss >> n;
+    meshes.clear();
+    meshes.reserve(n);
+
+    while (n--) {
+        auto staticMesh = std::make_shared<StaticMesh>();
+        ss >> staticMesh->pos.x >> staticMesh->pos.y >> staticMesh->pos.z;
+        ss >> staticMesh->rot.x >> staticMesh->rot.y >> staticMesh->rot.z;
+        ss >> staticMesh->scale.x >> staticMesh->scale.y >> staticMesh->scale.z;
+        ss >> staticMesh->meshName;
+        staticMesh->loadMesh();
+        staticMesh->calcMatrix();
+        meshes.emplace_back(std::move(staticMesh));
+    }
+
+    n = 0;
+    ss >> n;
     // FIXME
     //sprites.clear();
     sprites.reserve(n);
@@ -217,6 +261,14 @@ void Level::save(const std::string& file) const
             ss << ' ' << pointIds[point->adjacentPoint.lock().get()];
             ss << std::endl;
         }
+    }
+
+    ss << meshes.size() << std::endl;
+    for (const auto& mesh : meshes) {
+        ss << mesh->pos.x << ' ' << mesh->pos.y << ' ' << mesh->pos.z << std::endl;
+        ss << mesh->rot.x << ' ' << mesh->rot.y << ' ' << mesh->rot.z << std::endl;
+        ss << mesh->scale.x << ' ' << mesh->scale.y << ' ' << mesh->scale.z << std::endl;
+        ss << mesh->meshName << std::endl;
     }
 
     ss << sprites.size() << std::endl;

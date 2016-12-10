@@ -18,6 +18,9 @@
 #include "mesh.h"
 #include "util.h"
 #include <glm/gtc/matrix_transform.hpp>
+#include <map>
+
+static std::map<std::string, std::shared_ptr<Mesh>> meshCache;
 
 glm::mat4 Mesh::Object::makeMatrix() const
 {
@@ -172,4 +175,24 @@ void Mesh::bake()
         bboxCenter = (bboxMin + bboxMax) * 0.5f;
         bboxSize = (bboxMax - bboxMin);
     }
+}
+
+void meshInitCache()
+{
+}
+
+void meshShutdownCache()
+{
+    meshCache.clear();
+}
+
+const std::shared_ptr<Mesh>& meshGetCached(const std::string& name)
+{
+    auto it = meshCache.find(name);
+    if (it == meshCache.end()) {
+        auto mesh = std::make_shared<Mesh>();
+        mesh->load(name);
+        it = meshCache.emplace(name, std::move(mesh)).first;
+    }
+    return it->second;
 }
