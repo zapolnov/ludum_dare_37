@@ -159,10 +159,6 @@ void Level::draw3D() const
         }
     }
     drawEndPrimitive();
-    drawFlush();
-
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     // Draw 3D objects
     for (const auto& object : meshes) {
@@ -170,6 +166,11 @@ void Level::draw3D() const
         drawMesh(*object->mesh);
         drawPopMatrix();
     }
+
+    drawFlush();
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     // Draw 2D objects
     for (const auto& object : sprites)

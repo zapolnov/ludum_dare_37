@@ -31,7 +31,7 @@ public:
 
 private:
     std::string mFile;
-    Mesh mMesh;
+    std::shared_ptr<Mesh> mMesh;
     int mSelectedObject;
     float mCameraDistance;
     float mCameraHorzRotation;

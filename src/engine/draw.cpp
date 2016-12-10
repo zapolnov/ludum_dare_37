@@ -206,6 +206,7 @@ void drawBillboard(const glm::vec3& pos, const Sprite& sprite)
 
 void drawMesh(const Mesh& mesh)
 {
+    drawSetTexture(0);
     drawPushColor(glm::vec4(1.0f));
     drawBeginPrimitive(GL_TRIANGLES);
 

@@ -32,9 +32,11 @@ MeshEditor::MeshEditor(const std::string& file)
     , mCameraVertRotation(0.0f)
     , mCameraPosition(0.0f)
 {
-    if (fileExists(mFile)) {
-        mMesh.load(mFile);
-        mCameraDistance = std::max(glm::length(mMesh.bboxSize), 2.0f);
+    if (!fileExists(mFile))
+        mMesh = std::make_shared<Mesh>();
+    else {
+        mMesh = meshGetCached(mFile);
+        mCameraDistance = std::max(glm::length(mMesh->bboxSize), 2.0f);
     }
 }
 
@@ -71,7 +73,7 @@ void MeshEditor::run(double time, int width, int height)
         drawPopColor();
     drawEndPrimitive();
 
-    drawMesh(mMesh);
+    drawMesh(*mMesh);
 
     drawEnd();
 
@@ -83,7 +85,7 @@ void MeshEditor::run(double time, int width, int height)
     }
 
     if (ImGui::Button("Save"))
-        mMesh.save(mFile);
+        mMesh->save(mFile);
 
     ImGui::BeginGroup();
     ImGui::PushID("Camera");
@@ -118,12 +120,12 @@ void MeshEditor::run(double time, int width, int height)
 
     static std::string buffer;
     auto listboxGetter = [](void* data, int n, const char** p) -> bool {
-            auto object = reinterpret_cast<MeshEditor*>(data)->mMesh.objects[size_t(n)].get();
+            auto object = reinterpret_cast<MeshEditor*>(data)->mMesh->objects[size_t(n)].get();
             buffer = fmt() << '[' << object->typeString() << "] " << n;
             *p = buffer.c_str();
             return true;
         };
-    ImGui::ListBox("Objects", &mSelectedObject, listboxGetter, this, int(mMesh.objects.size()), 16);
+    ImGui::ListBox("Objects", &mSelectedObject, listboxGetter, this, int(mMesh->objects.size()), 16);
 
     bool bake = false;
 
@@ -131,18 +133,18 @@ void MeshEditor::run(double time, int width, int height)
         auto object = std::unique_ptr<Mesh::Cube>(new Mesh::Cube);
         object->p1 = glm::vec3(-1.0f);
         object->p2 = glm::vec3(1.0f);
-        mSelectedObject = int(mMesh.objects.size());
-        mMesh.objects.emplace_back(std::move(object));
+        mSelectedObject = int(mMesh->objects.size());
+        mMesh->objects.emplace_back(std::move(object));
         bake = true;
     }
 
-    if (mSelectedObject >= 0 && mSelectedObject < int(mMesh.objects.size())) {
-        auto object = mMesh.objects[mSelectedObject].get();
+    if (mSelectedObject >= 0 && mSelectedObject < int(mMesh->objects.size())) {
+        auto object = mMesh->objects[mSelectedObject].get();
 
         if (ImGui::Button("Clone Object")) {
             auto newObject = std::unique_ptr<Mesh::Object>(object->clone());
-            mSelectedObject = int(mMesh.objects.size());
-            mMesh.objects.emplace_back(std::move(newObject));
+            mSelectedObject = int(mMesh->objects.size());
+            mMesh->objects.emplace_back(std::move(newObject));
             bake = true;
         }
 
@@ -169,7 +171,7 @@ void MeshEditor::run(double time, int width, int height)
     ImGui::End();
 
     if (bake)
-        mMesh.bake();
+        mMesh->bake();
 
     if (!windowVisible) {
         gameSetScreen(mainMenu);
