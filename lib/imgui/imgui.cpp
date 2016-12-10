@@ -659,7 +659,10 @@
 
 static void             LogRenderedText(const ImVec2& ref_pos, const char* text, const char* text_end = NULL);
 
-static void             PushMultiItemsWidths(int components, float w_full = 0.0f);
+namespace ImGui {
+void             PushMultiItemsWidths(int components, float w_full = 0.0f);
+}
+
 static float            GetDraggedColumnOffset(int column_index);
 
 static bool             IsKeyPressedMap(ImGuiKey key, bool repeat = true);
@@ -4584,7 +4587,7 @@ void ImGui::PushItemWidth(float item_width)
     window->DC.ItemWidthStack.push_back(window->DC.ItemWidth);
 }
 
-static void PushMultiItemsWidths(int components, float w_full)
+void ImGui::PushMultiItemsWidths(int components, float w_full)
 {
     ImGuiWindow* window = ImGui::GetCurrentWindow();
     const ImGuiStyle& style = GImGui->Style;

@@ -15,20 +15,27 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
-#ifndef MAINMENU_H
-#define MAINMENU_H
+#ifndef MESHEDITOR_H
+#define MESHEDITOR_H
 
-#include "gamescreen.h"
+#include "menu/gamescreen.h"
+#include "engine/mesh.h"
 
-class MainMenu : public GameScreen
+class MeshEditor : public GameScreen
 {
 public:
-    MainMenu();
-    ~MainMenu();
+    explicit MeshEditor(const std::string& file = std::string());
+    ~MeshEditor();
 
     void run(double time, int width, int height) override;
-};
 
-extern MainMenu* mainMenu;
+private:
+    std::string mFile;
+    Mesh mMesh;
+    int mSelectedObject;
+    float mCameraDistance;
+    float mCameraHorzRotation;
+    float mCameraVertRotation;
+};
 
 #endif

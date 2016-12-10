@@ -34,6 +34,12 @@ void fatalExit(const std::string& message)
     exit(1);
 }
 
+bool fileExists(const std::string& name)
+{
+    struct stat st;
+    return (stat(("data/" + name).c_str(), &st) == 0);
+}
+
 std::string loadFile(const std::string& name)
 {
     logPrint(fmt() << "Loading \"" << name << "\"...");
@@ -67,4 +73,41 @@ std::string loadFile(const std::string& name)
     fclose(f);
 
     return result;
+}
+
+void saveFile(const std::string& name, const std::string& data)
+{
+    FILE* f = fopen(("data/" + name).c_str(), "wb");
+    if (!f) {
+        const char* errorMessage = strerror(errno);
+        fatalExit(fmt() << "Unable to write file \"" << name << "\": " << errorMessage);
+    }
+
+    size_t bytesWritten = fwrite(&data[0], 1, data.length(), f);
+    if (ferror(f)) {
+        const char* errorMessage = strerror(errno);
+        fclose(f);
+        fatalExit(fmt() << "Unable to write file \"" << name << "\": " << errorMessage);
+    }
+    if (bytesWritten != data.length()) {
+        fclose(f);
+        fatalExit(fmt() << "Incomplete write in file \"" << name << "\".");
+    }
+
+    fclose(f);
+}
+
+uint32_t toUInt32(const glm::vec4& c)
+{
+    union {
+        struct { uint8_t r, g, b, a; };
+        uint32_t v;
+    } u;
+
+    u.r = uint8_t(glm::clamp(long(c.r * 255.0f), 0L, 255L));
+    u.g = uint8_t(glm::clamp(long(c.g * 255.0f), 0L, 255L));
+    u.b = uint8_t(glm::clamp(long(c.b * 255.0f), 0L, 255L));
+    u.a = uint8_t(glm::clamp(long(c.a * 255.0f), 0L, 255L));
+
+    return u.v;
 }

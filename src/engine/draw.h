@@ -20,6 +20,7 @@
 
 #include "engine/opengl.h"
 #include "engine/sprite.h"
+#include "engine/mesh.h"
 #include <glm/glm.hpp>
 
 void drawInit();
@@ -42,6 +43,7 @@ void drawSetTexture(GLuint texture);
 void drawSprite(const glm::vec2& pos, const glm::vec2& size, const glm::vec2& anchor, GLuint texture);
 void drawSprite(const glm::vec2& pos, const Sprite& sprite);
 void drawBillboard(const glm::vec3& pos, const Sprite& sprite);
+void drawMesh(const glm::vec3& pos, const Mesh& mesh);
 
 void drawBeginPrimitive(GLenum primitiveType);
 void drawEndPrimitive();

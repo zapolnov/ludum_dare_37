@@ -18,8 +18,11 @@
 #include "mainmenu.h"
 #include "game.h"
 #include "level.h"
+#include "editor/mesheditor.h"
 #include "engine/util.h"
 #include "engine/gui.h"
+
+MainMenu* mainMenu;
 
 MainMenu::MainMenu()
 {
@@ -34,5 +37,10 @@ void MainMenu::run(double time, int width, int height)
     if (ImGui::Button("PLAY GAME!")) {
         Level* level = new Level;
         gameSetScreen(level);
+    }
+
+    if (ImGui::Button("NEW MESH")) {
+        MeshEditor* editor = new MeshEditor("TEST");
+        gameSetScreen(editor);
     }
 }

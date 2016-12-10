@@ -22,7 +22,6 @@
 #include "menu/mainmenu.h"
 
 static GameScreen* currentScreen;
-MainMenu* mainMenu;
 
 void gameInit()
 {

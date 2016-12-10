@@ -17,6 +17,7 @@
  */
 #include "opengl.h"
 #include "draw.h"
+#include "util.h"
 #include <cassert>
 #include <cstdint>
 #include <vector>
@@ -122,34 +123,14 @@ const glm::vec4& drawGetColor()
 
 void drawPushColor(const glm::vec4& c)
 {
-    union {
-        struct { uint8_t r, g, b, a; };
-        uint32_t v;
-    } u;
-
-    u.r = uint8_t(glm::clamp(long(c.r * 255.0f), 0L, 255L));
-    u.g = uint8_t(glm::clamp(long(c.g * 255.0f), 0L, 255L));
-    u.b = uint8_t(glm::clamp(long(c.b * 255.0f), 0L, 255L));
-    u.a = uint8_t(glm::clamp(long(c.a * 255.0f), 0L, 255L));
-
-    color.emplace_back(c, u.v);
+    color.emplace_back(c, toUInt32(c));
 }
 
 void drawSetColor(const glm::vec4& c)
 {
-    union {
-        struct { uint8_t r, g, b, a; };
-        uint32_t v;
-    } u;
-
-    u.r = uint8_t(glm::clamp(long(c.r * 255.0f), 0L, 255L));
-    u.g = uint8_t(glm::clamp(long(c.g * 255.0f), 0L, 255L));
-    u.b = uint8_t(glm::clamp(long(c.b * 255.0f), 0L, 255L));
-    u.a = uint8_t(glm::clamp(long(c.a * 255.0f), 0L, 255L));
-
     assert(color.size() > 0);
     color.back().first = c;
-    color.back().second = u.v;
+    color.back().second = toUInt32(c);
 }
 
 void drawPopColor()
@@ -211,6 +192,20 @@ void drawBillboard(const glm::vec3& pos, const Sprite& sprite)
         drawIndex(v2);
         drawVertex3D(p4, glm::vec2(1.0f, 1.0f));
     drawEndPrimitive();
+}
+
+void drawMesh(const glm::vec3& pos, const Mesh& mesh)
+{
+    drawPushColor(glm::vec4(1.0f));
+    drawBeginPrimitive(GL_TRIANGLES);
+
+    for (const auto& v : mesh.vertices) {
+        color.back().second = v.color;
+        drawVertex3D(v.position);
+    }
+
+    drawEndPrimitive();
+    drawPopColor();
 }
 
 void drawBeginPrimitive(GLenum primitiveType)

@@ -21,6 +21,11 @@
 #include <imgui/imgui.h>
 #include <glm/glm.hpp>
 
+namespace ImGui
+{
+    void PushMultiItemsWidths(int components, float wFull = 0.0f);
+}
+
 void guiInit();
 void guiShutdown();
 

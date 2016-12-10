@@ -19,8 +19,6 @@
 #define GAME_H
 
 class GameScreen;
-class MainMenu;
-extern MainMenu* mainMenu;
 
 void gameInit();
 void gameShutdown();

@@ -37,11 +37,15 @@ add_executable(LDGame
     lib/imgui/imgui.h
     lib/imgui/imgui_draw.cpp
     lib/imgui/imgui_internal.h
+    src/editor/mesheditor.cpp
+    src/editor/mesheditor.h
     src/engine/draw.cpp
     src/engine/draw.h
     src/engine/gui.cpp
     src/engine/gui.h
     src/engine/main.cpp
+    src/engine/mesh.cpp
+    src/engine/mesh.h
     src/engine/opengl.cpp
     src/engine/opengl.h
     src/engine/sprite.cpp

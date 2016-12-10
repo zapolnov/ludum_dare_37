@@ -18,6 +18,7 @@
 #ifndef UTIL_H
 #define UTIL_H
 
+#include <glm/glm.hpp>
 #include <string>
 #include <sstream>
 
@@ -35,6 +36,10 @@ private:
 void logPrint(const std::string& message);
 void fatalExit(const std::string& message);
 
+bool fileExists(const std::string& name);
 std::string loadFile(const std::string& name);
+void saveFile(const std::string& name, const std::string& data);
+
+uint32_t toUInt32(const glm::vec4& c);
 
 #endif
