@@ -81,7 +81,6 @@ public:
     static void loadResources();
     static void unloadResources();
 
-    void draw2D() const;
     void draw3D() const;
 
     void load(const std::string& file);

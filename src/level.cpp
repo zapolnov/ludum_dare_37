@@ -31,12 +31,11 @@ static GLuint floorTexture;
 
 Level::Level()
 {
-    /*
-        FlatSprite object;
-        object.pos = glm::vec3(0.0f);
-        object.sprite = man1Sprite;
-        sprites.emplace_back(object);
-    */
+    // FIXME
+    auto object = std::make_shared<FlatSprite>();
+    object->pos = glm::vec3(0.0f);
+    object->sprite = man1Sprite;
+    sprites.emplace_back(object);
 }
 
 Level::~Level()
@@ -57,23 +56,10 @@ void Level::unloadResources()
     openglDeleteTexture(wallpaperTexture);
 }
 
-void Level::draw2D() const
-{
-    drawBeginPrimitive(GL_LINES);
-
-    for (const auto& sector : sectors) {
-        size_t n = sector->points.size();
-        for (size_t i = 0; i < n; i++) {
-            drawVertex(sector->points[i]->pos);
-            drawVertex(sector->points[(i + 1) % n]->pos);
-        }
-    }
-
-    drawEndPrimitive();
-}
-
 void Level::draw3D() const
 {
+    glDisable(GL_BLEND);
+
     // Draw walls
     drawSetTexture(wallpaperTexture);
     drawBeginPrimitive(GL_TRIANGLES);
@@ -122,10 +108,17 @@ void Level::draw3D() const
         }
     }
     drawEndPrimitive();
+    drawFlush();
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     // Draw objects
     for (const auto& object : sprites)
         drawBillboard(object->pos, object->sprite);
+    drawFlush();
+
+    glDisable(GL_BLEND);
 }
 
 void Level::load(const std::string& file)
@@ -183,7 +176,8 @@ void Level::load(const std::string& file)
 
     n = 0;
     ss >> n;
-    sprites.clear();
+    // FIXME
+    //sprites.clear();
     sprites.reserve(n);
 
     while (n--) {
@@ -236,20 +230,8 @@ void Level::save(const std::string& file) const
 
 void Level::run(double time, int width, int height)
 {
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
     drawBegin(glm::perspective(glm::radians(90.0f), float(width) / float(height), 1.0f, 1000.0f));
     drawPushMatrix(glm::lookAt(glm::vec3(80.0f, 80.0f, 80.0f), glm::vec3(0.0f), glm::vec3(0.0f, 0.0f, 1.0f)));
     draw3D();
     drawEnd();
-
-    /*
-    glDisable(GL_DEPTH_TEST);
-    glDepthMask(GL_FALSE);
-
-    drawBegin(glm::ortho(-512.0f, 512.0f, 384.0f, -384.0f, -1.0f, 1.0f));
-    draw2D();
-    drawEnd();
-    */
 }
