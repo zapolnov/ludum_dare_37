@@ -21,29 +21,60 @@
 #include "engine/sprite.h"
 #include "menu/gamescreen.h"
 #include <glm/glm.hpp>
+#include <memory>
 #include <vector>
-
-struct Point
-{
-    glm::vec2 pos;
-    float minZ;
-    float maxZ;
-};
-
-struct Sector
-{
-    std::vector<Point> points;
-};
-
-struct Object2D
-{
-    glm::vec3 pos;
-    Sprite sprite;
-};
 
 class Level : public GameScreen
 {
 public:
+    struct Sector;
+
+    struct Point
+    {
+        glm::vec2 pos;
+        float minZ;
+        float maxZ;
+        std::weak_ptr<Sector> adjacentSector;
+        std::weak_ptr<Point> adjacentPoint;
+
+        Point()
+            : pos(0.0f)
+            , minZ(0.0f)
+            , maxZ(0.0f)
+        {
+        }
+
+        Point(const glm::vec2& p, float mnZ, float mxZ)
+            : pos(p)
+            , minZ(mnZ)
+            , maxZ(mxZ)
+        {
+        }
+
+        Point(const glm::vec2& p, float mnZ, float mxZ, const std::shared_ptr<Sector>& as, const std::shared_ptr<Point>& ap)
+            : pos(p)
+            , minZ(mnZ)
+            , maxZ(mxZ)
+            , adjacentSector(as)
+            , adjacentPoint(ap)
+        {
+        }
+    };
+
+    struct Sector
+    {
+        std::vector<std::shared_ptr<Point>> points;
+    };
+
+    struct FlatSprite
+    {
+        glm::vec3 pos;
+        Sprite sprite;
+    };
+
+    std::vector<std::shared_ptr<Sector>> sectors;
+    std::vector<std::shared_ptr<FlatSprite>> sprites;
+
     Level();
     ~Level();
 
@@ -53,11 +84,10 @@ public:
     void draw2D() const;
     void draw3D() const;
 
-    void run(double time, int width, int height) override;
+    void load(const std::string& file);
+    void save(const std::string& file) const;
 
-private:
-    std::vector<Sector> mSectors;
-    std::vector<Object2D> mObjects;
+    void run(double time, int width, int height) override;
 };
 
 #endif

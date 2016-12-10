@@ -27,6 +27,10 @@ public:
     ~MainMenu();
 
     void run(double time, int width, int height) override;
+
+private:
+    char mMeshFile[256];
+    char mLevelFile[256];
 };
 
 extern MainMenu* mainMenu;

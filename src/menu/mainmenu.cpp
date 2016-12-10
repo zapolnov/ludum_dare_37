@@ -19,6 +19,7 @@
 #include "game.h"
 #include "level.h"
 #include "editor/mesheditor.h"
+#include "editor/leveleditor.h"
 #include "engine/util.h"
 #include "engine/gui.h"
 
@@ -26,6 +27,8 @@ MainMenu* mainMenu;
 
 MainMenu::MainMenu()
 {
+    strcpy(mMeshFile, "table");
+    strcpy(mLevelFile, "room1");
 }
 
 MainMenu::~MainMenu()
@@ -39,8 +42,21 @@ void MainMenu::run(double time, int width, int height)
         gameSetScreen(level);
     }
 
-    if (ImGui::Button("NEW MESH")) {
-        MeshEditor* editor = new MeshEditor("TEST");
+    ImGui::PushID("Mesh");
+    ImGui::InputText("Mesh", mMeshFile, sizeof(mMeshFile));
+    ImGui::SameLine();
+    if (ImGui::Button("EDIT")) {
+        MeshEditor* editor = new MeshEditor(std::string(mMeshFile) + ".mesh");
         gameSetScreen(editor);
     }
+    ImGui::PopID();
+
+    ImGui::PushID("Level");
+    ImGui::InputText("Level", mLevelFile, sizeof(mLevelFile));
+    ImGui::SameLine();
+    if (ImGui::Button("EDIT")) {
+        LevelEditor* editor = new LevelEditor(std::string(mLevelFile) + ".level");
+        gameSetScreen(editor);
+    }
+    ImGui::PopID();
 }

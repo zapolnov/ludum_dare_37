@@ -39,6 +39,7 @@ void drawSetColor(const glm::vec4& c);
 void drawPopColor();
 
 void drawSetTexture(GLuint texture);
+void drawSetLineWidth(float width);
 
 void drawSprite(const glm::vec2& pos, const glm::vec2& size, const glm::vec2& anchor, GLuint texture);
 void drawSprite(const glm::vec2& pos, const Sprite& sprite);

@@ -15,28 +15,31 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
-#ifndef MESHEDITOR_H
-#define MESHEDITOR_H
+#ifndef LEVELEDITOR_H
+#define LEVELEDITOR_H
 
 #include "menu/gamescreen.h"
 #include "engine/mesh.h"
+#include "level.h"
 
-class MeshEditor : public GameScreen
+class LevelEditor : public GameScreen
 {
 public:
-    explicit MeshEditor(const std::string& file = std::string());
-    ~MeshEditor();
+    explicit LevelEditor(const std::string& file = std::string());
+    ~LevelEditor();
 
     void run(double time, int width, int height) override;
 
 private:
     std::string mFile;
-    Mesh mMesh;
-    int mSelectedObject;
+    Level mLevel;
+    int mSelectedSector;
+    int mSelectedPoint;
     float mCameraDistance;
     float mCameraHorzRotation;
     float mCameraVertRotation;
     glm::vec3 mCameraPosition;
+    bool mCullFace;
 };
 
 #endif

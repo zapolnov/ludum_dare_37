@@ -42,6 +42,7 @@ static size_t vertexCount;
 static size_t indexCount;
 static GLenum currentPrimitiveType;
 static GLuint currentTexture;
+static float currentLineWidth;
 
 static glm::mat4 projectionMatrix;
 static std::vector<std::pair<glm::vec4, uint32_t>> color;
@@ -84,6 +85,7 @@ void drawBegin(const glm::mat4& projMatrix)
     indexCount = 0;
     currentPrimitiveType = 0;
     currentTexture = 0;
+    currentLineWidth = 1.0f;
 
     projectionMatrix = projMatrix;
 
@@ -145,6 +147,14 @@ void drawSetTexture(GLuint texture)
     if (texture != currentTexture) {
         drawFlush();
         currentTexture = texture;
+    }
+}
+
+void drawSetLineWidth(float width)
+{
+    if (width != currentLineWidth) {
+        drawFlush();
+        currentLineWidth = width;
     }
 }
 
@@ -261,6 +271,8 @@ void drawFlush()
 {
     if (vertexCount > 0 || indexCount > 0) {
         glUseProgram(shader);
+
+        glLineWidth(currentLineWidth);
 
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, currentTexture != 0 ? currentTexture : dummyTexture);

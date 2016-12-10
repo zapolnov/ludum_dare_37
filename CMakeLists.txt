@@ -37,6 +37,8 @@ add_executable(LDGame
     lib/imgui/imgui.h
     lib/imgui/imgui_draw.cpp
     lib/imgui/imgui_internal.h
+    src/editor/leveleditor.cpp
+    src/editor/leveleditor.h
     src/editor/mesheditor.cpp
     src/editor/mesheditor.h
     src/engine/draw.cpp

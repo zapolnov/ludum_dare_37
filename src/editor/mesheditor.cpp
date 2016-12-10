@@ -30,6 +30,7 @@ MeshEditor::MeshEditor(const std::string& file)
     , mCameraDistance(10.0f)
     , mCameraHorzRotation(0.0f)
     , mCameraVertRotation(0.0f)
+    , mCameraPosition(0.0f)
 {
     if (fileExists(mFile)) {
         mMesh.load(mFile);
@@ -48,7 +49,7 @@ void MeshEditor::run(double time, int width, int height)
         mCameraDistance * sinf(glm::radians(mCameraVertRotation)),
         mCameraDistance * cosf(glm::radians(mCameraHorzRotation)) * cosf(glm::radians(mCameraVertRotation)));
 
-    glm::vec3 cameraTarget = glm::vec3(0.0f);
+    glm::vec3 cameraTarget = glm::vec3(mCameraPosition.x, mCameraPosition.y, -mCameraPosition.z);
     glm::vec3 cameraPosition = cameraTarget + cameraOffset;
 
     drawBegin(glm::perspective(glm::radians(90.0f), float(width) / float(height), 1.0f, 1000.0f));
@@ -61,12 +62,13 @@ void MeshEditor::run(double time, int width, int height)
         drawPushColor(glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
         drawVertex3D(glm::vec3(0.0f, 0.0f, 0.0f));
         drawVertex3D(glm::vec3(10.0f, 0.0f, 0.0f));
-        drawPushColor(glm::vec4(0.0f, 1.0f, 0.0f, 1.0f));
+        drawSetColor(glm::vec4(0.0f, 1.0f, 0.0f, 1.0f));
         drawVertex3D(glm::vec3(0.0f, 0.0f, 0.0f));
         drawVertex3D(glm::vec3(0.0f, 10.0f, 0.0f));
-        drawPushColor(glm::vec4(0.0f, 0.0f, 1.0f, 1.0f));
+        drawSetColor(glm::vec4(0.0f, 0.0f, 1.0f, 1.0f));
         drawVertex3D(glm::vec3(0.0f, 0.0f, 0.0f));
         drawVertex3D(glm::vec3(0.0f, 0.0f, 10.0f));
+        drawPopColor();
     drawEndPrimitive();
 
     drawMesh(glm::vec3(0.0f), mMesh);
@@ -74,7 +76,7 @@ void MeshEditor::run(double time, int width, int height)
     drawEnd();
 
     bool windowVisible = true;
-    ImGui::SetNextWindowSize(ImVec2(300, 400), ImGuiSetCond_FirstUseEver);
+    ImGui::SetNextWindowSize(ImVec2(200, 600), ImGuiSetCond_FirstUseEver);
     if (!ImGui::Begin("Mesh Editor", &windowVisible, 0)) {
         ImGui::End();
         return;
@@ -85,6 +87,17 @@ void MeshEditor::run(double time, int width, int height)
 
     ImGui::BeginGroup();
     ImGui::PushID("Camera");
+
+    ImGui::PushMultiItemsWidths(3);
+    ImGui::DragFloat("X", &mCameraPosition.x, 1.0f, -std::numeric_limits<float>::max(), std::numeric_limits<float>::max());
+    ImGui::SameLine(0, ImGui::GetStyle().ItemInnerSpacing.x);
+    ImGui::PopItemWidth();
+    ImGui::DragFloat("Y", &mCameraPosition.z, 1.0f, -std::numeric_limits<float>::max(), std::numeric_limits<float>::max());
+    ImGui::SameLine(0, ImGui::GetStyle().ItemInnerSpacing.x);
+    ImGui::PopItemWidth();
+    ImGui::DragFloat("Z", &mCameraPosition.y, 1.0f, -std::numeric_limits<float>::max(), std::numeric_limits<float>::max());
+    ImGui::PopItemWidth();
+
     ImGui::PushMultiItemsWidths(3);
     ImGui::DragFloat("DIST", &mCameraDistance, 1.0f, 2.0f, std::numeric_limits<float>::max());
     ImGui::SameLine(0, ImGui::GetStyle().ItemInnerSpacing.x);
@@ -92,9 +105,9 @@ void MeshEditor::run(double time, int width, int height)
     ImGui::DragFloat("HORZ", &mCameraHorzRotation, 1.0f, -std::numeric_limits<float>::max(), std::numeric_limits<float>::max());
     ImGui::SameLine(0, ImGui::GetStyle().ItemInnerSpacing.x);
     ImGui::PopItemWidth();
-    ImGui::DragFloat("VERT", &mCameraVertRotation, 1.0f, -179.0f, 179.0f);
-    ImGui::SameLine(0, ImGui::GetStyle().ItemInnerSpacing.x);
+    ImGui::DragFloat("VERT", &mCameraVertRotation, 1.0f, -89.0f, 89.0f);
     ImGui::PopItemWidth();
+
     ImGui::PopID();
     ImGui::EndGroup();
 

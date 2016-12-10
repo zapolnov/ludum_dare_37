@@ -82,4 +82,6 @@ struct Mesh
     void bake();
 };
 
+extern const glm::vec3 cubeVertices[36];
+
 #endif
