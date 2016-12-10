@@ -39,7 +39,7 @@ std::string loadFile(const std::string& name)
     logPrint(fmt() << "Loading \"" << name << "\"...");
 
     struct stat st;
-    if (stat(name.c_str(), &st) < 0) {
+    if (stat(("data/" + name).c_str(), &st) < 0) {
         const char* errorMessage = strerror(errno);
         fatalExit(fmt() << "Unable to stat file \"" << name << "\": " << errorMessage);
     }
@@ -47,7 +47,7 @@ std::string loadFile(const std::string& name)
     size_t size = size_t(st.st_size);
     std::string result(size, 0);
 
-    FILE* f = fopen(name.c_str(), "rb");
+    FILE* f = fopen(("data/" + name).c_str(), "rb");
     if (!f) {
         const char* errorMessage = strerror(errno);
         fatalExit(fmt() << "Unable to open file \"" << name << "\": " << errorMessage);

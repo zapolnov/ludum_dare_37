@@ -15,32 +15,36 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
-#ifndef OPENGL_H
-#define OPENGL_H
+#ifndef DRAW_H
+#define DRAW_H
 
-#include <GLES2/gl2.h>
+#include "opengl.h"
 #include <glm/glm.hpp>
-#include <string>
 
-enum GLRepeatFlags
-{
-    NoRepeat = 0,
-    RepeatX = 0x0001,
-    RepeatY = 0x0002,
-    Repeat = RepeatX | RepeatY,
-};
+void drawInit();
+void drawShutdown();
 
-GLuint openglCreateTexture(int repeat = NoRepeat, GLenum filter = GL_LINEAR);
-GLuint openglLoadTexture(const std::string& file, int repeat = NoRepeat, GLenum filter = GL_LINEAR);
-void openglDeleteTexture(GLuint handle);
+void drawBegin(float left, float top, float right, float bottom);
+void drawEnd();
 
-GLuint openglCreateBuffer();
-void openglDeleteBuffer(GLuint handle);
+const glm::mat4& drawGetMatrix();
+void drawPushMatrix(const glm::mat4& matrix);
+void drawPopMatrix();
 
-GLuint openglCreateProgram();
-GLuint openglLoadProgram(const std::string& vertexShaderFile, const std::string& fragmentShaderFile);
-GLuint openglLoadShader(GLenum type, const std::string& file);
-void openglLoadAttachShader(GLuint program, GLenum type, const std::string& file);
-void openglLinkProgram(GLuint program);
+const glm::vec4& drawGetColor();
+void drawPushColor(const glm::vec4& c);
+void drawSetColor(const glm::vec4& c);
+void drawPopColor();
+
+void drawSetTexture(GLuint texture);
+
+void drawSprite(const glm::vec2& pos, const glm::vec2& size, const glm::vec2& anchor, GLuint texture);
+
+void drawBeginPrimitive(GLenum primitiveType);
+void drawEndPrimitive();
+GLushort drawVertex(const glm::vec2& pos, const glm::vec2& texCoord = glm::vec2(0.0f));
+void drawIndex(GLushort index);
+
+void drawFlush();
 
 #endif

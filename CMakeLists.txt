@@ -24,6 +24,8 @@ include_directories(BEFORE "${CMAKE_CURRENT_SOURCE_DIR}/lib" "${CMAKE_CURRENT_SO
 include_directories(BEFORE SYSTEM "${CMAKE_CURRENT_SOURCE_DIR}/lib")
 
 add_executable(LDGame
+    src/engine/draw.cpp
+    src/engine/draw.h
     src/engine/main.cpp
     src/engine/opengl.cpp
     src/engine/opengl.h

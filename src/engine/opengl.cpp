@@ -23,6 +23,36 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb/stb_image.h>
 
+GLuint openglCreateTexture(int repeat, GLenum filter)
+{
+    GLuint texture = 0;
+    glGenTextures(1, &texture);
+    if (texture == 0)
+        fatalExit("Unable to create texture.");
+
+    glBindTexture(GL_TEXTURE_2D, texture);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, (repeat & RepeatX) ? GL_REPEAT : GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, (repeat & RepeatY) ? GL_REPEAT : GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filter);
+
+    switch (filter) {
+        case GL_NEAREST:
+        case GL_NEAREST_MIPMAP_NEAREST:
+        case GL_NEAREST_MIPMAP_LINEAR:
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+            break;
+
+        case GL_LINEAR:
+        case GL_LINEAR_MIPMAP_NEAREST:
+        case GL_LINEAR_MIPMAP_LINEAR:
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            break;
+    }
+
+    return texture;
+}
+
 GLuint openglLoadTexture(const std::string& file, int repeat, GLenum filter)
 {
     std::string fileData = loadFile(file);
@@ -65,63 +95,48 @@ GLuint openglLoadTexture(const std::string& file, int repeat, GLenum filter)
             fatalExit(fmt() << "Image \"" << file << "\" has unsupported format.");
     }
 
-    GLuint texture = 0;
-    glGenTextures(1, &texture);
-    if (texture == 0)
-        fatalExit("Unable to create texture.");
-
-    glBindTexture(GL_TEXTURE_2D, texture);
+    GLuint texture = openglCreateTexture(repeat, filter);
 
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    glBindTexture(GL_TEXTURE_2D, texture);
     glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, w, h, 0, format, type, pixels);
 
     stbi_image_free(pixels);
 
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, (repeat & RepeatX) ? GL_REPEAT : GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, (repeat & RepeatY) ? GL_REPEAT : GL_CLAMP_TO_EDGE);
-
     switch (filter) {
         case GL_NEAREST:
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-            break;
-
         case GL_LINEAR:
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
             break;
 
         case GL_NEAREST_MIPMAP_NEAREST:
-            glGenerateMipmap(GL_TEXTURE_2D);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-            break;
-
         case GL_NEAREST_MIPMAP_LINEAR:
-            glGenerateMipmap(GL_TEXTURE_2D);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-            break;
-
         case GL_LINEAR_MIPMAP_NEAREST:
-            glGenerateMipmap(GL_TEXTURE_2D);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-            break;
-
         case GL_LINEAR_MIPMAP_LINEAR:
             glGenerateMipmap(GL_TEXTURE_2D);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
             break;
     }
 
     return texture;
 }
 
-void openglDestroyTexture(GLuint handle)
+void openglDeleteTexture(GLuint handle)
 {
     glDeleteTextures(1, &handle);
+}
+
+GLuint openglCreateBuffer()
+{
+    GLuint buffer = 0;
+    glGenBuffers(1, &buffer);
+    if (buffer == 0)
+        fatalExit("Unable to create buffer.");
+
+    return buffer;
+}
+
+void openglDeleteBuffer(GLuint handle)
+{
+    glDeleteBuffers(1, &handle);
 }
 
 GLuint openglCreateProgram()

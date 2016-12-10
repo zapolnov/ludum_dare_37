@@ -16,6 +16,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 #include "util.h"
+#include "draw.h"
 #include "game.h"
 
 #define GLFW_INCLUDE_ES2 1
@@ -58,6 +59,7 @@ int main()
 
     glfwMakeContextCurrent(window);
 
+    drawInit();
     gameInit();
 
     prevTime = glfwGetTime();
@@ -65,6 +67,7 @@ int main()
         runFrame();
 
     gameShutdown();
+    drawShutdown();
 
     glfwDestroyWindow(window);
     glfwTerminate();

@@ -17,17 +17,18 @@
  */
 #include "game.h"
 #include "engine/opengl.h"
+#include "engine/draw.h"
 
-static GLuint program;
+static GLuint texture;
 
 void gameInit()
 {
-    program = openglLoadProgram("vertex.glsl", "fragment.glsl");
+    texture = openglLoadTexture("test.png");
 }
 
 void gameShutdown()
 {
-    glDeleteProgram(program);
+    openglDeleteTexture(texture);
 }
 
 void gameRunFrame(double frameTime, int width, int height)
@@ -35,17 +36,12 @@ void gameRunFrame(double frameTime, int width, int height)
     glClearColor(0.1f, 0.3f, 0.5f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    static const float vertices[] = {
-            -0.5f, -0.5f,
-             0.5f, -0.5f,
-            -0.5f,  0.5f,
-             0.5f,  0.5f,
-        };
+    drawBegin(-512.0f, -384.0f, 512.0f, 384.0f);
 
-    int pos = glGetAttribLocation(program, "aPosition");
-    glUseProgram(program);
-    glVertexAttribPointer(pos, 2, GL_FLOAT, GL_FALSE, 0, vertices);
-    glEnableVertexAttribArray(pos);
-    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-    glDisableVertexAttribArray(pos);
+    drawSetColor(glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
+    drawSprite(glm::vec2(-100.0f), glm::vec2(128.0f, 256.0f), glm::vec2(0.5f), texture);
+    drawSetColor(glm::vec4(0.0f, 1.0f, 0.0f, 1.0f));
+    drawSprite(glm::vec2(100.0f), glm::vec2(128.0f, 256.0f), glm::vec2(0.5f), texture);
+
+    drawEnd();
 }
