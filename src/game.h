@@ -18,6 +18,10 @@
 #ifndef GAME_H
 #define GAME_H
 
+#include "engine/opengl.h"
+
+extern GLuint wallpaperTexture;
+
 void gameInit();
 void gameShutdown();
 void gameRunFrame(double time, int width, int height);

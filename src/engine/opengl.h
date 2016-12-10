@@ -27,7 +27,7 @@ enum GLRepeatFlags
     NoRepeat = 0,
     RepeatX = 0x0001,
     RepeatY = 0x0002,
-    Repeat = RepeatX | RepeatY,
+    RepeatXY = RepeatX | RepeatY,
 };
 
 GLuint openglCreateTexture(int repeat = NoRepeat, GLenum filter = GL_LINEAR);

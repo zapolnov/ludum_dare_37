@@ -16,6 +16,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 #include "level.h"
+#include "game.h"
 #include "engine/draw.h"
 
 Level::Level()
@@ -49,6 +50,7 @@ void Level::draw2D() const
 
 void Level::draw3D() const
 {
+    drawSetTexture(wallpaperTexture);
     drawBeginPrimitive(GL_TRIANGLES);
 
     for (const auto& sector : mSectors) {
@@ -57,13 +59,13 @@ void Level::draw3D() const
             const auto& p1 = sector.points[i];
             const auto& p2 = sector.points[(i + 1) % n];
 
-            drawVertex3D(glm::vec3(p1.pos, p1.minZ));
-            drawVertex3D(glm::vec3(p1.pos, p1.maxZ));
-            drawVertex3D(glm::vec3(p2.pos, p2.minZ));
+            drawVertex3D(glm::vec3(p1.pos, p1.minZ), glm::vec2(0.0f, 0.0f));
+            drawVertex3D(glm::vec3(p1.pos, p1.maxZ), glm::vec2(0.0f, 1.0f));
+            drawVertex3D(glm::vec3(p2.pos, p2.minZ), glm::vec2(1.0f, 0.0f));
 
-            drawVertex3D(glm::vec3(p2.pos, p2.minZ));
-            drawVertex3D(glm::vec3(p1.pos, p1.maxZ));
-            drawVertex3D(glm::vec3(p2.pos, p2.maxZ));
+            drawVertex3D(glm::vec3(p2.pos, p2.minZ), glm::vec2(1.0f, 0.0f));
+            drawVertex3D(glm::vec3(p1.pos, p1.maxZ), glm::vec2(0.0f, 1.0f));
+            drawVertex3D(glm::vec3(p2.pos, p2.maxZ), glm::vec2(1.0f, 1.0f));
         }
     }
 

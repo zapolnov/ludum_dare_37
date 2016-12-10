@@ -21,21 +21,27 @@
 #include "engine/draw.h"
 #include <glm/gtc/matrix_transform.hpp>
 
+GLuint wallpaperTexture;
 static GLuint texture;
 static Level level;
 
 void gameInit()
 {
     texture = openglLoadTexture("test.png");
+    wallpaperTexture = openglLoadTexture("wallpaper.png", RepeatXY, GL_NEAREST);
 }
 
 void gameShutdown()
 {
+    openglDeleteTexture(wallpaperTexture);
     openglDeleteTexture(texture);
 }
 
 void gameRunFrame(double frameTime, int width, int height)
 {
+    glEnable(GL_DEPTH_TEST);
+    glDepthMask(GL_TRUE);
+
     glClearColor(0.1f, 0.3f, 0.5f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -44,7 +50,8 @@ void gameRunFrame(double frameTime, int width, int height)
     level.draw3D();
     drawEnd();
 
-    glClear(GL_DEPTH_BUFFER_BIT);
+    glDisable(GL_DEPTH_TEST);
+    glDepthMask(GL_FALSE);
 
     drawBegin(glm::ortho(-512.0f, 512.0f, 384.0f, -384.0f, -1.0f, 1.0f));
     level.draw2D();
