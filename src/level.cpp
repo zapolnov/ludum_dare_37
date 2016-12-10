@@ -23,6 +23,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 static GLuint wallpaperTexture;
+static GLuint floorTexture;
 
 Level::Level()
 {
@@ -41,10 +42,12 @@ Level::~Level()
 void Level::loadResources()
 {
     wallpaperTexture = openglLoadTexture("wallpaper.png", RepeatXY, GL_NEAREST);
+    floorTexture = openglLoadTexture("floor.png", RepeatXY, GL_NEAREST);
 }
 
 void Level::unloadResources()
 {
+    openglDeleteTexture(floorTexture);
     openglDeleteTexture(wallpaperTexture);
 }
 
@@ -65,9 +68,10 @@ void Level::draw2D() const
 
 void Level::draw3D() const
 {
+
+    // Draw walls
     drawSetTexture(wallpaperTexture);
     drawBeginPrimitive(GL_TRIANGLES);
-
     for (const auto& sector : mSectors) {
         size_t n = sector.points.size();
         for (size_t i = 0; i < n; i++) {
@@ -75,15 +79,31 @@ void Level::draw3D() const
             const auto& p2 = sector.points[(i + 1) % n];
 
             drawVertex3D(glm::vec3(p1.pos, p1.minZ), glm::vec2(0.0f, 0.0f));
-            drawVertex3D(glm::vec3(p1.pos, p1.maxZ), glm::vec2(0.0f, 1.0f));
-            drawVertex3D(glm::vec3(p2.pos, p2.minZ), glm::vec2(1.0f, 0.0f));
+            auto v1 = drawVertex3D(glm::vec3(p1.pos, p1.maxZ), glm::vec2(0.0f, 1.0f));
+            auto v2 = drawVertex3D(glm::vec3(p2.pos, p2.minZ), glm::vec2(1.0f, 0.0f));
 
-            drawVertex3D(glm::vec3(p2.pos, p2.minZ), glm::vec2(1.0f, 0.0f));
-            drawVertex3D(glm::vec3(p1.pos, p1.maxZ), glm::vec2(0.0f, 1.0f));
+            drawIndex(v2);
+            drawIndex(v1);
             drawVertex3D(glm::vec3(p2.pos, p2.maxZ), glm::vec2(1.0f, 1.0f));
         }
     }
+    drawEndPrimitive();
 
+    // Draw floor
+    drawSetTexture(floorTexture);
+    drawBeginPrimitive(GL_TRIANGLES);
+    for (const auto& sector : mSectors) {
+        size_t n = sector.points.size();
+        for (size_t i = 2; i < n; i++) {
+            const auto& p1 = sector.points[0];
+            const auto& p2 = sector.points[i - 1];
+            const auto& p3 = sector.points[i];
+
+            drawVertex3D(glm::vec3(p1.pos, p1.minZ), p1.pos / 8.0f);
+            drawVertex3D(glm::vec3(p2.pos, p2.minZ), p2.pos / 8.0f);
+            drawVertex3D(glm::vec3(p3.pos, p3.minZ), p3.pos / 8.0f);
+        }
+    }
     drawEndPrimitive();
 }
 
