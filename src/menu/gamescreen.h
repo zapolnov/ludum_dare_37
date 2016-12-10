@@ -15,19 +15,16 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
-#ifndef GAME_H
-#define GAME_H
+#ifndef GAMESCREEN_H
+#define GAMESCREEN_H
 
-class GameScreen;
-class MainMenu;
-extern MainMenu* mainMenu;
+class GameScreen
+{
+public:
+    GameScreen();
+    virtual ~GameScreen();
 
-void gameInit();
-void gameShutdown();
-
-GameScreen* gameScreen();
-void gameSetScreen(GameScreen* screen);
-
-void gameRunFrame(double time, int width, int height);
+    virtual void run(double time, int width, int height);
+};
 
 #endif

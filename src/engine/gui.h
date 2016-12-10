@@ -15,19 +15,23 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
-#ifndef GAME_H
-#define GAME_H
+#ifndef GUI_H
+#define GUI_H
 
-class GameScreen;
-class MainMenu;
-extern MainMenu* mainMenu;
+#include <imgui/imgui.h>
+#include <glm/glm.hpp>
 
-void gameInit();
-void gameShutdown();
+void guiInit();
+void guiShutdown();
 
-GameScreen* gameScreen();
-void gameSetScreen(GameScreen* screen);
+void guiBeginFrame(double frameTime, int width, int height);
+void guiEndFrame();
 
-void gameRunFrame(double time, int width, int height);
+void guiSetMousePos(const glm::vec2& pos);
+void guiSetMouseButtonPressed(int button, bool pressed);
+void guiSetMouseWheel(float wheel);
+void guiInjectKeyPress(int key);
+void guiInjectKeyRelease(int key);
+void guiInjectUnicode(unsigned short code);
 
 #endif

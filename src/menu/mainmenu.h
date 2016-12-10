@@ -15,19 +15,18 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
-#ifndef GAME_H
-#define GAME_H
+#ifndef MAINMENU_H
+#define MAINMENU_H
 
-class GameScreen;
-class MainMenu;
-extern MainMenu* mainMenu;
+#include "gamescreen.h"
 
-void gameInit();
-void gameShutdown();
+class MainMenu : public GameScreen
+{
+public:
+    MainMenu();
+    ~MainMenu();
 
-GameScreen* gameScreen();
-void gameSetScreen(GameScreen* screen);
-
-void gameRunFrame(double time, int width, int height);
+    void run(double time, int width, int height) override;
+};
 
 #endif

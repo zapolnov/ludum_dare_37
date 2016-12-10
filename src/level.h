@@ -18,6 +18,7 @@
 #ifndef LEVEL_H
 #define LEVEL_H
 
+#include "menu/gamescreen.h"
 #include <glm/glm.hpp>
 #include <vector>
 
@@ -33,14 +34,19 @@ struct Sector
     std::vector<Point> points;
 };
 
-class Level
+class Level : public GameScreen
 {
 public:
     Level();
     ~Level();
 
+    static void loadResources();
+    static void unloadResources();
+
     void draw2D() const;
     void draw3D() const;
+
+    void run(double time, int width, int height) override;
 
 private:
     std::vector<Sector> mSectors;

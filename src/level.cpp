@@ -18,6 +18,11 @@
 #include "level.h"
 #include "game.h"
 #include "engine/draw.h"
+#include "engine/opengl.h"
+#include "engine/gui.h"
+#include <glm/gtc/matrix_transform.hpp>
+
+static GLuint wallpaperTexture;
 
 Level::Level()
 {
@@ -31,6 +36,16 @@ Level::Level()
 
 Level::~Level()
 {
+}
+
+void Level::loadResources()
+{
+    wallpaperTexture = openglLoadTexture("wallpaper.png", RepeatXY, GL_NEAREST);
+}
+
+void Level::unloadResources()
+{
+    openglDeleteTexture(wallpaperTexture);
 }
 
 void Level::draw2D() const
@@ -70,4 +85,21 @@ void Level::draw3D() const
     }
 
     drawEndPrimitive();
+}
+
+void Level::run(double time, int width, int height)
+{
+    drawBegin(glm::perspective(glm::radians(90.0f), float(width) / float(height), 1.0f, 1000.0f));
+    drawPushMatrix(glm::lookAt(glm::vec3(30.0f, 30.0f, 30.0f), glm::vec3(0.0f), glm::vec3(0.0f, 0.0f, 1.0f)));
+    draw3D();
+    drawEnd();
+
+    /*
+    glDisable(GL_DEPTH_TEST);
+    glDepthMask(GL_FALSE);
+
+    drawBegin(glm::ortho(-512.0f, 512.0f, 384.0f, -384.0f, -1.0f, 1.0f));
+    draw2D();
+    drawEnd();
+    */
 }

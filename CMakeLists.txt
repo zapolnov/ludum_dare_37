@@ -20,17 +20,36 @@ cmake_minimum_required(VERSION 3.5)
 
 set(CMAKE_CXX_STANDARD 11)
 
-include_directories(BEFORE "${CMAKE_CURRENT_SOURCE_DIR}/lib" "${CMAKE_CURRENT_SOURCE_DIR}/src")
-include_directories(BEFORE SYSTEM "${CMAKE_CURRENT_SOURCE_DIR}/lib")
+include_directories(BEFORE
+    "${CMAKE_CURRENT_SOURCE_DIR}/lib"
+    "${CMAKE_CURRENT_SOURCE_DIR}/lib/stb"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src"
+    )
+
+include_directories(BEFORE SYSTEM
+    "${CMAKE_CURRENT_SOURCE_DIR}/lib"
+    "${CMAKE_CURRENT_SOURCE_DIR}/lib/stb"
+    )
 
 add_executable(LDGame
+    lib/imgui/imconfig.h
+    lib/imgui/imgui.cpp
+    lib/imgui/imgui.h
+    lib/imgui/imgui_draw.cpp
+    lib/imgui/imgui_internal.h
     src/engine/draw.cpp
     src/engine/draw.h
+    src/engine/gui.cpp
+    src/engine/gui.h
     src/engine/main.cpp
     src/engine/opengl.cpp
     src/engine/opengl.h
     src/engine/util.cpp
     src/engine/util.h
+    src/menu/gamescreen.cpp
+    src/menu/gamescreen.h
+    src/menu/mainmenu.cpp
+    src/menu/mainmenu.h
     src/game.cpp
     src/game.h
     src/level.cpp

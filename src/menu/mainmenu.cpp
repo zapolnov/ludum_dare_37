@@ -15,19 +15,24 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
-#ifndef GAME_H
-#define GAME_H
+#include "mainmenu.h"
+#include "game.h"
+#include "level.h"
+#include "engine/util.h"
+#include "engine/gui.h"
 
-class GameScreen;
-class MainMenu;
-extern MainMenu* mainMenu;
+MainMenu::MainMenu()
+{
+}
 
-void gameInit();
-void gameShutdown();
+MainMenu::~MainMenu()
+{
+}
 
-GameScreen* gameScreen();
-void gameSetScreen(GameScreen* screen);
-
-void gameRunFrame(double time, int width, int height);
-
-#endif
+void MainMenu::run(double time, int width, int height)
+{
+    if (ImGui::Button("PLAY GAME!")) {
+        Level* level = new Level;
+        gameSetScreen(level);
+    }
+}

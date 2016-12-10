@@ -18,25 +18,74 @@
 #include "util.h"
 #include "draw.h"
 #include "game.h"
+#include "gui.h"
 
 #define GLFW_INCLUDE_ES2 1
 #include <GLFW/glfw3.h>
 
+static float mouseWheel;
+static bool mouseButtonPressed[3];
 static double prevTime;
 static GLFWwindow* window;
 
+static void mouseButtonCallback(GLFWwindow*, int button, int action, int)
+{
+    if (action == GLFW_PRESS && button >= 0 && button < 3)
+        mouseButtonPressed[button] = true;
+}
+
+static void mouseWheelCallback(GLFWwindow*, double, double yoffset)
+{
+    mouseWheel += float(yoffset);
+}
+
+static void keyCallback(GLFWwindow*, int key, int, int action, int)
+{
+    switch (action) {
+        case GLFW_PRESS: guiInjectKeyPress(key); break;
+        case GLFW_RELEASE: guiInjectKeyRelease(key); break;
+    }
+}
+
+static void charCallback(GLFWwindow*, unsigned int c)
+{
+    if (c > 0 && c < 0x10000)
+        guiInjectUnicode(static_cast<unsigned short>(c));
+}
+
 void runFrame()
 {
-    int width = 0, height = 0;
-    glfwGetFramebufferSize(window, &width, &height);
-    glViewport(0, 0, width, height);
+    if (!glfwGetWindowAttrib(window, GLFW_FOCUSED))
+        guiSetMousePos(glm::vec2(-1.0f));
+    else {
+        double mouseX = 0.0, mouseY = 0.0;
+        glfwGetCursorPos(window, &mouseX, &mouseY);
+        guiSetMousePos(glm::vec2(float(mouseX), float(mouseY)));
+    }
+
+    for (int i = 0; i < 3; i++) {
+        guiSetMouseButtonPressed(i, mouseButtonPressed[i] || glfwGetMouseButton(window, i));
+        mouseButtonPressed[i] = false;
+    }
+
+    guiSetMouseWheel(mouseWheel);
+    mouseWheel = 0.0f;
 
     double time = glfwGetTime();
     double frameTime = time - prevTime;
     prevTime = time;
 
-    gameRunFrame(frameTime, width, height);
+    int winWidth = 0, winHeight = 0;
+    glfwGetWindowSize(window, &winWidth, &winHeight);
+    guiBeginFrame(frameTime, winWidth, winHeight);
 
+    int fbWidth = 0, fbHeight = 0;
+    glfwGetFramebufferSize(window, &fbWidth, &fbHeight);
+    glViewport(0, 0, fbWidth, fbHeight);
+
+    gameRunFrame(frameTime, winWidth, winHeight);
+
+    guiEndFrame();
     glfwSwapBuffers(window);
     glfwPollEvents();
 }
@@ -57,9 +106,15 @@ int main()
     if (!window)
         fatalExit("Unable to create main window.");
 
+    glfwSetMouseButtonCallback(window, mouseButtonCallback);
+    glfwSetScrollCallback(window, mouseWheelCallback);
+    glfwSetKeyCallback(window, keyCallback);
+    glfwSetCharCallback(window, charCallback);
+
     glfwMakeContextCurrent(window);
 
     drawInit();
+    guiInit();
     gameInit();
 
     prevTime = glfwGetTime();
@@ -67,6 +122,7 @@ int main()
         runFrame();
 
     gameShutdown();
+    guiShutdown();
     drawShutdown();
 
     glfwDestroyWindow(window);

@@ -71,6 +71,7 @@ void drawShutdown()
     openglDeleteBuffer(vertexBuffer);
     openglDeleteBuffer(colorBuffer);
     openglDeleteBuffer(indexBuffer);
+    glDeleteProgram(shader);
 }
 
 void drawBegin(const glm::mat4& projMatrix)

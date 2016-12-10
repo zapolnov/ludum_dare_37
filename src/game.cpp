@@ -18,48 +18,46 @@
 #include "game.h"
 #include "level.h"
 #include "engine/opengl.h"
-#include "engine/draw.h"
-#include <glm/gtc/matrix_transform.hpp>
+#include "menu/gamescreen.h"
+#include "menu/mainmenu.h"
 
-GLuint wallpaperTexture;
-static GLuint texture;
-static Level level;
+static GameScreen* currentScreen;
+MainMenu* mainMenu;
 
 void gameInit()
 {
-    texture = openglLoadTexture("test.png");
-    wallpaperTexture = openglLoadTexture("wallpaper.png", RepeatXY, GL_NEAREST);
+    Level::loadResources();
+    mainMenu = new MainMenu;
+    gameSetScreen(mainMenu);
 }
 
 void gameShutdown()
 {
-    openglDeleteTexture(wallpaperTexture);
-    openglDeleteTexture(texture);
+    delete mainMenu;
+    Level::unloadResources();
+}
+
+GameScreen* gameScreen()
+{
+    return currentScreen;
+}
+
+void gameSetScreen(GameScreen* screen)
+{
+    currentScreen = screen;
 }
 
 void gameRunFrame(double frameTime, int width, int height)
 {
+    glDisable(GL_BLEND);
+    glEnable(GL_CULL_FACE);
+    glDisable(GL_SCISSOR_TEST);
     glEnable(GL_DEPTH_TEST);
     glDepthMask(GL_TRUE);
 
     glClearColor(0.1f, 0.3f, 0.5f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    drawBegin(glm::perspective(glm::radians(90.0f), float(width) / float(height), 1.0f, 1000.0f));
-    drawPushMatrix(glm::lookAt(glm::vec3(30.0f, 30.0f, 30.0f), glm::vec3(0.0f), glm::vec3(0.0f, 0.0f, 1.0f)));
-    level.draw3D();
-    drawEnd();
-
-    glDisable(GL_DEPTH_TEST);
-    glDepthMask(GL_FALSE);
-
-    drawBegin(glm::ortho(-512.0f, 512.0f, 384.0f, -384.0f, -1.0f, 1.0f));
-    level.draw2D();
-    /*
-    drawSetColor(glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
-    drawSprite(glm::vec2(-100.0f), glm::vec2(128.0f, 256.0f), glm::vec2(0.5f), texture);
-    drawSetColor(glm::vec4(0.0f, 1.0f, 0.0f, 1.0f));
-    drawSprite(glm::vec2(100.0f), glm::vec2(128.0f, 256.0f), glm::vec2(0.5f), texture);
-    */
-    drawEnd();
+    if (currentScreen)
+        currentScreen->run(frameTime, width, height);
 }
