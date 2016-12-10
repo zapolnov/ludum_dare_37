@@ -1,5 +1,5 @@
 
-attribute vec2 aPosition;
+attribute vec3 aPosition;
 attribute vec2 aTexCoord;
 attribute vec4 aColor;
 
@@ -10,7 +10,7 @@ varying vec4 vColor;
 
 void main()
 {
-    vec4 position = uProjectionMatrix * vec4(aPosition, 0.0, 1.0);
+    vec4 position = uProjectionMatrix * vec4(aPosition, 1.0);
     vTexCoord = aTexCoord;
     vColor = aColor;
     gl_Position = position;

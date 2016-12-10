@@ -24,7 +24,7 @@
 void drawInit();
 void drawShutdown();
 
-void drawBegin(float left, float top, float right, float bottom);
+void drawBegin(const glm::mat4& projMatrix);
 void drawEnd();
 
 const glm::mat4& drawGetMatrix();
@@ -43,6 +43,7 @@ void drawSprite(const glm::vec2& pos, const glm::vec2& size, const glm::vec2& an
 void drawBeginPrimitive(GLenum primitiveType);
 void drawEndPrimitive();
 GLushort drawVertex(const glm::vec2& pos, const glm::vec2& texCoord = glm::vec2(0.0f));
+GLushort drawVertex3D(const glm::vec3& pos, const glm::vec2& texCoord = glm::vec2(0.0f));
 void drawIndex(GLushort index);
 
 void drawFlush();

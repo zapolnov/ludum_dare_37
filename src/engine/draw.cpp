@@ -17,7 +17,6 @@
  */
 #include "opengl.h"
 #include "draw.h"
-#include <glm/gtc/matrix_transform.hpp>
 #include <cassert>
 #include <cstdint>
 #include <vector>
@@ -34,6 +33,7 @@ static int attrColor;
 static int uniformProjectionMatrix;
 static int uniformTexture;
 
+static const size_t VERTICES_PER_INDEX = 5;
 static std::vector<GLfloat> vertices;
 static std::vector<uint32_t> colors;
 static std::vector<GLushort> indices;
@@ -63,7 +63,6 @@ void drawInit()
     attrColor = glGetAttribLocation(shader, "aColor");
     uniformProjectionMatrix = glGetUniformLocation(shader, "uProjectionMatrix");
     uniformTexture = glGetUniformLocation(shader, "uTexture");
-    printf("%d %d %d %d %d\n", attrPosition, attrTexCoord, attrColor, uniformProjectionMatrix, uniformTexture);
 }
 
 void drawShutdown()
@@ -74,7 +73,7 @@ void drawShutdown()
     openglDeleteBuffer(indexBuffer);
 }
 
-void drawBegin(float left, float top, float right, float bottom)
+void drawBegin(const glm::mat4& projMatrix)
 {
     vertices.clear();
     colors.clear();
@@ -84,7 +83,7 @@ void drawBegin(float left, float top, float right, float bottom)
     currentPrimitiveType = 0;
     currentTexture = 0;
 
-    projectionMatrix = glm::ortho(left, right, bottom, top, -1.0f, 1.0f);
+    projectionMatrix = projMatrix;
 
     modelViewMatrix.resize(1);
     modelViewMatrix[0] = glm::mat4(1.0f);
@@ -193,26 +192,32 @@ void drawBeginPrimitive(GLenum primitiveType)
 
 void drawEndPrimitive()
 {
-    vertexCount = vertices.size() / 4;
+    vertexCount = vertices.size() / VERTICES_PER_INDEX;
     indexCount = indices.size();
 }
 
 GLushort drawVertex(const glm::vec2& pos, const glm::vec2& texCoord)
 {
-    if (vertices.size() >= 0xFFFE) {
+    return drawVertex3D(glm::vec3(pos, 0.0f), texCoord);
+}
+
+GLushort drawVertex3D(const glm::vec3& pos, const glm::vec2& texCoord)
+{
+    if (vertices.size() + VERTICES_PER_INDEX >= 0xFFFF) {
         assert(vertexCount > 0);
         drawFlush();
     }
 
-    GLushort index = GLushort(vertices.size()) / 4;
-    assert(vertices.size() == colors.size() * 4);
+    GLushort index = GLushort(vertices.size()) / VERTICES_PER_INDEX;
+    assert(vertices.size() == colors.size() * VERTICES_PER_INDEX);
 
     assert(modelViewMatrix.size() > 0);
-    glm::vec4 transformedPos = modelViewMatrix.back() * glm::vec4(pos, 0.0f, 1.0f);
+    glm::vec4 transformedPos = modelViewMatrix.back() * glm::vec4(pos, 1.0f);
 
     assert(color.size() > 0);
     vertices.emplace_back(transformedPos.x);
     vertices.emplace_back(transformedPos.y);
+    vertices.emplace_back(transformedPos.z);
     vertices.emplace_back(texCoord.x);
     vertices.emplace_back(texCoord.y);
     colors.emplace_back(color.back().second);
@@ -237,9 +242,9 @@ void drawFlush()
         glUniformMatrix4fv(uniformProjectionMatrix, 1, GL_FALSE, &projectionMatrix[0][0]);
 
         glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
-        glBufferData(GL_ARRAY_BUFFER, vertexCount * sizeof(GLfloat) * 4, vertices.data(), GL_STREAM_DRAW);
-        glVertexAttribPointer(attrPosition, 2, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 4, reinterpret_cast<void*>(sizeof(GLfloat) * 0));
-        glVertexAttribPointer(attrTexCoord, 2, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 4, reinterpret_cast<void*>(sizeof(GLfloat) * 2));
+        glBufferData(GL_ARRAY_BUFFER, vertexCount * sizeof(GLfloat) * VERTICES_PER_INDEX, vertices.data(), GL_STREAM_DRAW);
+        glVertexAttribPointer(attrPosition, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * VERTICES_PER_INDEX, (void*)(sizeof(GLfloat) * 0));
+        glVertexAttribPointer(attrTexCoord, 2, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * VERTICES_PER_INDEX, (void*)(sizeof(GLfloat) * 3));
 
         glBindBuffer(GL_ARRAY_BUFFER, colorBuffer);
         glBufferData(GL_ARRAY_BUFFER, vertexCount * sizeof(uint32_t), colors.data(), GL_STREAM_DRAW);
@@ -260,7 +265,7 @@ void drawFlush()
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-        vertices.erase(vertices.begin(), vertices.begin() + vertexCount * 4);
+        vertices.erase(vertices.begin(), vertices.begin() + vertexCount * VERTICES_PER_INDEX);
         colors.erase(colors.begin(), colors.begin() + vertexCount);
         indices.erase(indices.begin(), indices.begin() + indexCount);
 

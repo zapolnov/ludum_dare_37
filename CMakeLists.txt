@@ -33,6 +33,8 @@ add_executable(LDGame
     src/engine/util.h
     src/game.cpp
     src/game.h
+    src/level.cpp
+    src/level.h
     )
 
 find_library(GLFW3 glfw)
