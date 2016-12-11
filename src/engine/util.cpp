@@ -25,7 +25,9 @@
 
 void logPrint(const std::string& message)
 {
+  #ifndef PLATFORM_EMSCRIPTEN
     fprintf(stderr, "%s\n", message.c_str());
+  #endif
 }
 
 void fatalExit(const std::string& message)

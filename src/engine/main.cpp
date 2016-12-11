@@ -24,6 +24,10 @@
 #define GLFW_INCLUDE_ES2 1
 #include <GLFW/glfw3.h>
 
+#ifdef PLATFORM_EMSCRIPTEN
+    #include <emscripten.h>
+#endif
+
 static float mouseWheel;
 static bool mouseButtonPressed[3];
 static double prevTime;
@@ -56,9 +60,12 @@ static void charCallback(GLFWwindow*, unsigned int c)
 
 void runFrame()
 {
+  #ifndef PLATFORM_EMSCRIPTEN
     if (!glfwGetWindowAttrib(window, GLFW_FOCUSED))
         guiSetMousePos(glm::vec2(-1.0f));
-    else {
+    else
+  #endif
+    {
         double mouseX = 0.0, mouseY = 0.0;
         glfwGetCursorPos(window, &mouseX, &mouseY);
         guiSetMousePos(glm::vec2(float(mouseX), float(mouseY)));
@@ -120,6 +127,10 @@ int main()
     gameInit();
 
     prevTime = glfwGetTime();
+
+  #ifdef PLATFORM_EMSCRIPTEN
+    emscripten_set_main_loop(runFrame, 0, true);
+  #else
     while (!glfwWindowShouldClose(window))
         runFrame();
 
@@ -130,6 +141,7 @@ int main()
 
     glfwDestroyWindow(window);
     glfwTerminate();
+  #endif
 
     return 0;
 }

@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en-us">
+ <head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <title>Bombyx Studio</title>
+  <style>
+    HTML, BODY {
+        background-color: #202020;
+        color: #c0c0c0;
+        width: 100%;
+        height: 100%;
+        margin: 0px;
+        padding: 0px;
+        border: 0;
+        overflow: hidden;
+        display: block;
+    }
+    #BombyxCanvas {
+        position: absolute;
+        left: 0px;
+        top: 0px;
+        border: 0px none;
+        padding: 0px;
+        margin: 0px;
+    }
+    #StatusMessage {
+        font-family: Arial, Verdana, Helvetica;
+        font-size: 15pt;
+        text-align: center;
+    }
+  </style>
+ </head>
+ <body>
+  <table border="0" cellspacing="0" cellpadding="0" width="100%" height="100%">
+   <tr>
+    <td align="center" valign="middle">
+     <canvas id="BombyxCanvas" style="display:none">Sorry, your browser does not support HTML5.</canvas>
+     <div id="StatusMessage">Loading...</div>
+    </td>
+   </tr>
+  </table>
+  <script type="text/javascript">
+    var canvas = document.getElementById('BombyxCanvas');
+    var statusMessage = document.getElementById('StatusMessage');
+
+    canvas.addEventListener('webglcontextlost', function(e) {
+            canvas.style.display = 'none';
+            statusMessage.style.display = '';
+            statusMessage.innerHTML = 'WebGL context has been lost. Please reload the page.'
+            e.preventDefault();
+        }, false);
+
+    canvas.width = 1024;
+    canvas.height = 768;
+
+    window.onerror = function() {
+            canvas.style.display = 'none';
+            statusMessage.style.display = '';
+            statusMessage.innerHTML = 'Application has crashed. Please reload the page.'
+        };
+
+    function setStatus(text) {
+        var m = text.match(/([^(]+)\((\d+(\.\d+)?)\/(\d+)\)/);
+        if (m) {
+            statusMessage.style.display = '';
+            statusMessage.innerHTML = text;
+        } else {
+            statusMessage.style.display = 'none';
+            canvas.style.display = '';
+        }
+    }
+
+    function print(text) {
+        if (text.startsWith("pre-main prep time: "))
+            return;
+        alert(text);
+    }
+
+    var Module = {
+        canvas: canvas,
+        preRun: [],
+        postRun: [],
+        setStatus: setStatus,
+        print: print,
+        printErr: print,
+        totalDependencies: 0,
+        monitorRunDependencies: function() {},
+    };
+  </script>
+  {{{ SCRIPT }}}
+ </body>
+</html>

@@ -31,6 +31,19 @@ include_directories(BEFORE SYSTEM
     "${CMAKE_CURRENT_SOURCE_DIR}/lib/stb"
     )
 
+if(EMSCRIPTEN)
+    add_definitions(-DPLATFORM_EMSCRIPTEN)
+    set(template "${CMAKE_CURRENT_SOURCE_DIR}/cmake/emscripten.html")
+    set(CMAKE_EXECUTABLE_SUFFIX ".html")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} --shell-file \"${template}\" --separate-asm")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} --preload-file \"${CMAKE_CURRENT_SOURCE_DIR}/data@data\"")
+    set(flags "-s USE_SDL=2 -s NO_EXIT_RUNTIME=1 -s ALIASING_FUNCTION_POINTERS=1 -s ERROR_ON_UNDEFINED_SYMBOLS=1")
+    set(flags "${flags} -s TOTAL_MEMORY=128000000")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${flags}")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${flags} -std=c++11")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -s USE_GLFW=3")
+endif()
+
 add_executable(LDGame
     lib/imgui/imconfig.h
     lib/imgui/imgui.cpp
@@ -64,6 +77,8 @@ add_executable(LDGame
     src/level.h
     )
 
-find_library(GLFW3 glfw)
-find_library(GLES2 GLESv2)
-target_link_libraries(LDGame ${GLFW3} ${GLES2})
+if(NOT EMSCRIPTEN)
+    find_library(GLFW3 glfw)
+    find_library(GLES2 GLESv2)
+    target_link_libraries(LDGame ${GLFW3} ${GLES2})
+endif()

@@ -40,7 +40,7 @@ float pass(vec3 plane, float z, vec3 rnd)
 void main()
 {
     float z = getDepth(vTexCoord);
-    vec3 plane = 2.0 * texture2D(uRandomizerTexture, vTexCoord * 512.0f).rgb - vec3(1.0);
+    vec3 plane = 2.0 * texture2D(uRandomizerTexture, vTexCoord * 512.0).rgb - vec3(1.0);
 
     float att;
     att  = pass(plane, z, vec3(-0.5, -0.5, -0.5));
