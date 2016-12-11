@@ -28,6 +28,7 @@ static const float COEFF = 32.0f;
 static Sprite man1Sprite;
 static GLuint wallpaperTexture;
 static GLuint floorTexture;
+bool ssaoEnabled = true;
 
 void Level::StaticMesh::loadMesh()
 {
@@ -79,9 +80,55 @@ void Level::unloadResources()
 
 void Level::draw3D() const
 {
+    glEnable(GL_DEPTH_TEST);
+    glDepthMask(GL_TRUE);
+
+    if (!ssaoEnabled) {
+        glDepthFunc(GL_LEQUAL);
+        drawContents3D();
+        drawSprites();
+        glDepthFunc(GL_LESS);
+        return;
+    }
+
+    glDepthFunc(GL_LESS);
+
+    drawBeginRenderToTexture(0, true);
     drawSetShader(Shader_Depth);
     drawContents3D();
+    drawEndRenderToTexture();
+
+    glDepthFunc(GL_LEQUAL);
+
+    drawBeginRenderToTexture(1, false);
     drawSetShader(Shader_Default);
+    drawContents3D();
+    drawEndRenderToTexture();
+
+    glDisable(GL_DEPTH_TEST);
+    glDepthMask(GL_FALSE);
+    glDepthFunc(GL_LESS);
+
+    drawBeginRenderToTexture(2, false);
+    drawSsao();
+    drawEndRenderToTexture();
+
+    drawBeginRenderToTexture(0, false);
+    drawBlur();
+    drawEndRenderToTexture();
+
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LEQUAL);
+
+    drawBeginRenderToTexture(1, false);
+    drawFromFramebuffer(0);
+    drawSprites();
+    drawEndRenderToTexture();
+
+    drawFromFramebuffer(1);
+
+    glDepthMask(GL_TRUE);
+    glDepthFunc(GL_LESS);
 }
 
 void Level::drawContents3D() const
@@ -173,7 +220,10 @@ void Level::drawContents3D() const
         drawMesh(*object->mesh);
         drawPopMatrix();
     }
+}
 
+void Level::drawSprites() const
+{
     drawFlush();
 
     glEnable(GL_BLEND);

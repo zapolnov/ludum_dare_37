@@ -27,6 +27,10 @@ enum Shader
 {
     Shader_Default = 0,
     Shader_Depth,
+    Shader_SSAO,
+    Shader_Blur,
+    Shader_FromFramebuffer,
+    ShaderCount     // should be the last one
 };
 
 void drawInit();
@@ -44,7 +48,7 @@ void drawPushColor(const glm::vec4& c);
 void drawSetColor(const glm::vec4& c);
 void drawPopColor();
 
-void drawBeginRenderToTexture(int n, int width, int height);
+void drawBeginRenderToTexture(int n, bool clearDepth);
 void drawEndRenderToTexture();
 
 void drawSetShader(Shader shader);
@@ -63,5 +67,9 @@ GLushort drawVertex3D(const glm::vec3& pos, const glm::vec2& texCoord = glm::vec
 void drawIndex(GLushort index);
 
 void drawFlush();
+
+void drawSsao();
+void drawBlur();
+void drawFromFramebuffer(int n);
 
 #endif

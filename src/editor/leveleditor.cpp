@@ -150,6 +150,7 @@ void LevelEditor::run(double time, int width, int height)
         mLevel.save(mFile);
 
     ImGui::Checkbox("Cull Faces", &mCullFace);
+    ImGui::Checkbox("SSAO", &ssaoEnabled);
 
     ImGui::BeginGroup();
     ImGui::PushID("Camera");

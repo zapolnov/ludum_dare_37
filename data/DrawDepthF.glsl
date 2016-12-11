@@ -1,20 +1,19 @@
 
 precision mediump float;
 
-varying vec4 vPosition;
 varying vec4 vColor;
 
-// http://aras-p.info/blog/2009/07/30/encoding-floats-to-rgba-the-final/
-vec4 packFloat(float v)
+// http://stackoverflow.com/questions/9882716/packing-float-into-vec4-how-does-this-code-work
+vec4 packFloat(float depth)
 {
-    vec4 enc = fract(v * vec4(1.0, 255.0, 65025.0, 160581375.0));
-    enc -= enc.yzww * vec4(1.0 / 255.0, 1.0 / 255.0, 1.0 / 255.0, 0.0);
-    return enc;
+    const vec4 bit_shift = vec4(256.0*256.0*256.0, 256.0*256.0, 256.0, 1.0);
+    const vec4 bit_mask  = vec4(0.0, 1.0/256.0, 1.0/256.0, 1.0/256.0);
+    vec4 res = fract(depth * bit_shift);
+    res -= res.xxyz * bit_mask;
+    return res;
 }
 
 void main()
 {
-    float distance = vPosition.z / vPosition.w;
-    float normalizedDistance = (distance + 1.0) / 2.0;
-    gl_FragColor = packFloat(normalizedDistance);
+    gl_FragColor = packFloat(gl_FragCoord.z);
 }

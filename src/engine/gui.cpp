@@ -108,7 +108,7 @@ void guiInit()
     vertexBuffer = openglCreateBuffer();
     indexBuffer = openglCreateBuffer();
 
-    shader = openglLoadProgram("DrawV.glsl", "DrawF.glsl");
+    shader = openglLoadProgram("GuiV.glsl", "GuiF.glsl");
     attrPosition = glGetAttribLocation(shader, "aPosition");
     attrTexCoord = glGetAttribLocation(shader, "aTexCoord");
     attrColor = glGetAttribLocation(shader, "aColor");

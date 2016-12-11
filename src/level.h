@@ -106,6 +106,9 @@ public:
 
 private:
     void drawContents3D() const;
+    void drawSprites() const;
 };
+
+extern bool ssaoEnabled;
 
 #endif

@@ -23,7 +23,7 @@
 #include <vector>
 
 static const size_t VERTICES_PER_INDEX = 5;
-static const size_t MAX_RENDERTARGETS = 2;
+static const size_t MAX_RENDERTARGETS = 3;
 
 namespace
 {
@@ -35,15 +35,19 @@ namespace
         int attrColor;
         int uniformProjectionMatrix;
         int uniformTexture;
+        int uniformRandomizerTexture;
         int uniformAuxTexture[MAX_RENDERTARGETS];
+        int uniformViewportSize;
     };
 }
 
 static GLuint dummyTexture;
+static GLuint ssaoRandomizerTexture;
 static GLuint vertexBuffer;
 static GLuint colorBuffer;
 static GLuint indexBuffer;
-static ShaderInfo shaders[2];
+static GLuint quadVertexBuffer;
+static ShaderInfo shaders[ShaderCount];
 
 static std::vector<GLfloat> vertices;
 static std::vector<uint32_t> colors;
@@ -64,6 +68,13 @@ static glm::mat4 projectionMatrix;
 static std::vector<std::pair<glm::vec4, uint32_t>> color;
 static std::vector<glm::mat4> modelViewMatrix;
 
+static const unsigned char ssaoRandomizerPixels[] = {
+    0x96, 0x7B, 0xFE, 0xFF, 0x7F, 0x03, 0x61, 0xFF, 0xA4, 0xF6, 0x63, 0xFF, 0x9B, 0xB1, 0x0E, 0xFF,
+    0x36, 0x53, 0xDD, 0xFF, 0x02, 0x8E, 0x8F, 0xFF, 0x20, 0x39, 0x4F, 0xFF, 0x31, 0xA0, 0x20, 0xFF,
+    0x39, 0xE8, 0x73, 0xFF, 0xB2, 0xD8, 0xCB, 0xFF, 0x46, 0xC4, 0xDA, 0xFF, 0xF1, 0xA4, 0x52, 0xFF,
+    0xE1, 0x38, 0x55, 0xFF, 0xE9, 0x58, 0xBD, 0xFF, 0x90, 0x19, 0xCB, 0xFF, 0x75, 0x49, 0x0C, 0xFF,
+};
+
 static void loadShader(Shader shader, const std::string& vertex, const std::string& fragment)
 {
     shaders[shader].handle = openglLoadProgram(vertex, fragment);
@@ -72,6 +83,8 @@ static void loadShader(Shader shader, const std::string& vertex, const std::stri
     shaders[shader].attrColor = glGetAttribLocation(shaders[shader].handle, "aColor");
     shaders[shader].uniformProjectionMatrix = glGetUniformLocation(shaders[shader].handle, "uProjectionMatrix");
     shaders[shader].uniformTexture = glGetUniformLocation(shaders[shader].handle, "uTexture");
+    shaders[shader].uniformRandomizerTexture = glGetUniformLocation(shaders[shader].handle, "uRandomizerTexture");
+    shaders[shader].uniformViewportSize = glGetUniformLocation(shaders[shader].handle, "uViewportSize");
 
     for (size_t i = 0; i < MAX_RENDERTARGETS; i++) {
         std::string name = fmt() << "uAuxTexture" << i;
@@ -85,18 +98,37 @@ void drawInit()
     colorBuffer = openglCreateBuffer();
     indexBuffer = openglCreateBuffer();
 
+    quadVertexBuffer = openglCreateBuffer();
+    glBindBuffer(GL_ARRAY_BUFFER, quadVertexBuffer);
+    static const GLfloat quadData[] = {
+            -1.0f, -1.0f, 0.0f, 0.0f,
+             1.0f, -1.0f, 1.0f, 0.0f,
+            -1.0f,  1.0f, 0.0f, 1.0f,
+             1.0f,  1.0f, 1.0f, 1.0f,
+        };
+    glBufferData(GL_ARRAY_BUFFER, sizeof(quadData), quadData, GL_STATIC_DRAW);
+
     const uint8_t whitePixel = 0xFF;
     dummyTexture = openglCreateTexture(NoRepeat, GL_NEAREST);
     glBindTexture(GL_TEXTURE_2D, dummyTexture);
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, 1, 1, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, &whitePixel);
+
+    ssaoRandomizerTexture = openglCreateTexture(RepeatXY, GL_LINEAR);
+    glBindTexture(GL_TEXTURE_2D, ssaoRandomizerTexture);
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 4, 4, 0, GL_RGBA, GL_UNSIGNED_BYTE, ssaoRandomizerPixels);
 
     framebuffer = openglCreateFramebuffer();
     renderbuffer = openglCreateRenderbuffer();
     for (size_t i = 0; i < MAX_RENDERTARGETS; i++)
-        renderTargets[i] = openglCreateTexture();
+        renderTargets[i] = openglCreateTexture(NoRepeat, GL_NEAREST);
 
-    loadShader(Shader_Default, "DrawV.glsl", "DrawF.glsl");
+    loadShader(Shader_Default, "DrawDefaultV.glsl", "DrawDefaultF.glsl");
     loadShader(Shader_Depth, "DrawDepthV.glsl", "DrawDepthF.glsl");
+    loadShader(Shader_SSAO, "DrawSsaoV.glsl", "DrawSsaoF.glsl");
+    loadShader(Shader_Blur, "DrawBlurV.glsl", "DrawBlurF.glsl");
+    loadShader(Shader_FromFramebuffer, "DrawFromFramebufferV.glsl", "DrawFromFramebufferF.glsl");
 }
 
 void drawShutdown()
@@ -107,13 +139,18 @@ void drawShutdown()
         openglDeleteTexture(renderTargets[i]);
 
     openglDeleteTexture(dummyTexture);
+    openglDeleteTexture(ssaoRandomizerTexture);
 
+    openglDeleteBuffer(quadVertexBuffer);
     openglDeleteBuffer(vertexBuffer);
     openglDeleteBuffer(colorBuffer);
     openglDeleteBuffer(indexBuffer);
 
     glDeleteProgram(shaders[Shader_Default].handle);
     glDeleteProgram(shaders[Shader_Depth].handle);
+    glDeleteProgram(shaders[Shader_SSAO].handle);
+    glDeleteProgram(shaders[Shader_Blur].handle);
+    glDeleteProgram(shaders[Shader_FromFramebuffer].handle);
 }
 
 void drawBegin(const glm::mat4& projMatrix)
@@ -182,9 +219,14 @@ void drawPopColor()
         color.pop_back();
 }
 
-void drawBeginRenderToTexture(int n, int width, int height)
+void drawBeginRenderToTexture(int n, bool clearDepth)
 {
     drawFlush();
+
+    GLint viewport[4] = { 0, 0, 0, 0 };
+    glGetIntegerv(GL_VIEWPORT, viewport);
+    int width = viewport[2];
+    int height = viewport[3];
 
     glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
 
@@ -193,7 +235,7 @@ void drawBeginRenderToTexture(int n, int width, int height)
         framebufferHeight = height;
 
         glBindRenderbuffer(GL_RENDERBUFFER, renderbuffer);
-        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, width, height);
+        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT16, width, height);
         glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, renderbuffer);
         glBindRenderbuffer(GL_RENDERBUFFER, 0);
     }
@@ -201,9 +243,12 @@ void drawBeginRenderToTexture(int n, int width, int height)
     glBindTexture(GL_TEXTURE_2D, renderTargets[n]);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, renderTargets[n], 0);
+    glBindTexture(GL_TEXTURE_2D, 0);
 
     GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
     assert(status == GL_FRAMEBUFFER_COMPLETE);
+
+    glClear(GL_COLOR_BUFFER_BIT | (clearDepth ? GL_DEPTH_BUFFER_BIT : 0));
 }
 
 void drawEndRenderToTexture()
@@ -353,22 +398,36 @@ static void setupUniforms(const ShaderInfo* shader)
 
     glLineWidth(currentLineWidth);
 
-    glActiveTexture(GL_TEXTURE0);
-    if (shader->uniformTexture < 0)
-        glBindTexture(GL_TEXTURE_2D, 0);
-    else {
-        glBindTexture(GL_TEXTURE_2D, currentTexture != 0 ? currentTexture : dummyTexture);
-        glUniform1i(shader->uniformTexture, 0);
+    int textureIndex = 0;
+    for (size_t i = 0; i < MAX_RENDERTARGETS; i++) {
+        if (shader->uniformAuxTexture[i] >= 0) {
+            glActiveTexture(GL_TEXTURE0 + textureIndex);
+            glBindTexture(GL_TEXTURE_2D, renderTargets[i]);
+            glUniform1i(shader->uniformAuxTexture[i], textureIndex);
+            ++textureIndex;
+        }
     }
 
-    for (size_t i = 0; i < MAX_RENDERTARGETS; i++) {
-        glActiveTexture(GL_TEXTURE1 + int(i));
-        if (shader->uniformAuxTexture[i] < 0)
-            glBindTexture(GL_TEXTURE_2D, 0);
-        else {
-            glBindTexture(GL_TEXTURE_2D, renderTargets[i]);
-            glUniform1i(shader->uniformAuxTexture[i], int(i) + 1);
-        }
+    if (shader->uniformTexture >= 0) {
+        glActiveTexture(GL_TEXTURE0 + textureIndex);
+        glBindTexture(GL_TEXTURE_2D, currentTexture != 0 ? currentTexture : dummyTexture);
+        glUniform1i(shader->uniformTexture, textureIndex);
+        ++textureIndex;
+    }
+
+    if (shader->uniformRandomizerTexture >= 0) {
+        glActiveTexture(GL_TEXTURE0 + textureIndex);
+        glBindTexture(GL_TEXTURE_2D, ssaoRandomizerTexture);
+        glUniform1i(shader->uniformRandomizerTexture, textureIndex);
+        ++textureIndex;
+    }
+
+    glActiveTexture(GL_TEXTURE0);
+
+    if (shader->uniformViewportSize >= 0) {
+        GLint viewport[4] = { 0, 0, 0, 0 };
+        glGetIntegerv(GL_VIEWPORT, viewport);
+        glUniform2f(shader->uniformViewportSize, float(viewport[2]), float(viewport[3]));
     }
 
     if (shader->uniformProjectionMatrix >= 0)
@@ -430,4 +489,51 @@ void drawFlush()
         vertexCount = 0;
         indexCount = 0;
     }
+}
+
+static void drawFullscreenQuad(Shader shaderId)
+{
+    drawFlush();
+
+    const ShaderInfo* shader = &shaders[shaderId];
+    setupUniforms(shader);
+
+    if (shader->attrPosition >= 0 || shader->attrTexCoord >= 0) {
+        glBindBuffer(GL_ARRAY_BUFFER, quadVertexBuffer);
+
+        if (shader->attrPosition >= 0) {
+            glVertexAttribPointer(shader->attrPosition, 2, GL_FLOAT, GL_FALSE,
+                sizeof(GLfloat) * 4, (void*)(sizeof(GLfloat) * 0));
+            glEnableVertexAttribArray(shader->attrPosition);
+        }
+
+        if (shader->attrTexCoord >= 0) {
+            glVertexAttribPointer(shader->attrTexCoord, 2, GL_FLOAT, GL_FALSE,
+                sizeof(GLfloat) * 4, (void*)(sizeof(GLfloat) * 2));
+            glEnableVertexAttribArray(shader->attrTexCoord);
+        }
+
+        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+        if (shader->attrPosition >= 0)
+            glDisableVertexAttribArray(shader->attrPosition);
+        if (shader->attrTexCoord >= 0)
+            glDisableVertexAttribArray(shader->attrTexCoord);
+    }
+}
+
+void drawSsao()
+{
+    drawFullscreenQuad(Shader_SSAO);
+}
+
+void drawBlur()
+{
+    drawFullscreenQuad(Shader_Blur);
+}
+
+void drawFromFramebuffer(int n)
+{
+    drawSetTexture(renderTargets[n]);
+    drawFullscreenQuad(Shader_FromFramebuffer);
 }
