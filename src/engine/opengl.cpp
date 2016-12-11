@@ -217,3 +217,31 @@ void openglLinkProgram(GLuint program)
         fatalExit(fmt() << "Unable to link program:\n" << buffer.data());
     }
 }
+
+GLuint openglCreateFramebuffer()
+{
+    GLuint fb = 0;
+    glGenFramebuffers(1, &fb);
+    if (fb == 0)
+        fatalExit("Unable to create framebuffer.");
+    return fb;
+}
+
+GLuint openglCreateRenderbuffer()
+{
+    GLuint rb = 0;
+    glGenRenderbuffers(1, &rb);
+    if (rb == 0)
+        fatalExit("Unable to create renderbuffer.");
+    return rb;
+}
+
+void openglDeleteFramebuffer(GLuint handle)
+{
+    glDeleteFramebuffers(1, &handle);
+}
+
+void openglDeleteRenderbuffer(GLuint handle)
+{
+    glDeleteRenderbuffers(1, &handle);
+}

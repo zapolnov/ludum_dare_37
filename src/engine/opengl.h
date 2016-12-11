@@ -44,4 +44,9 @@ GLuint openglLoadShader(GLenum type, const std::string& file);
 void openglLoadAttachShader(GLuint program, GLenum type, const std::string& file);
 void openglLinkProgram(GLuint program);
 
+GLuint openglCreateFramebuffer();
+GLuint openglCreateRenderbuffer();
+void openglDeleteFramebuffer(GLuint handle);
+void openglDeleteRenderbuffer(GLuint handle);
+
 #endif

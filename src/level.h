@@ -103,6 +103,9 @@ public:
     void save(const std::string& file) const;
 
     void run(double time, int width, int height) override;
+
+private:
+    void drawContents3D() const;
 };
 
 #endif

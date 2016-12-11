@@ -79,6 +79,13 @@ void Level::unloadResources()
 
 void Level::draw3D() const
 {
+    drawSetShader(Shader_Depth);
+    drawContents3D();
+    drawSetShader(Shader_Default);
+}
+
+void Level::drawContents3D() const
+{
     glDisable(GL_BLEND);
 
     // Draw walls

@@ -22,31 +22,62 @@
 #include <cstdint>
 #include <vector>
 
-static GLuint shader;
+static const size_t VERTICES_PER_INDEX = 5;
+static const size_t MAX_RENDERTARGETS = 2;
+
+namespace
+{
+    struct ShaderInfo
+    {
+        GLuint handle;
+        int attrPosition;
+        int attrTexCoord;
+        int attrColor;
+        int uniformProjectionMatrix;
+        int uniformTexture;
+        int uniformAuxTexture[MAX_RENDERTARGETS];
+    };
+}
+
 static GLuint dummyTexture;
 static GLuint vertexBuffer;
 static GLuint colorBuffer;
 static GLuint indexBuffer;
+static ShaderInfo shaders[2];
 
-static int attrPosition;
-static int attrTexCoord;
-static int attrColor;
-static int uniformProjectionMatrix;
-static int uniformTexture;
-
-static const size_t VERTICES_PER_INDEX = 5;
 static std::vector<GLfloat> vertices;
 static std::vector<uint32_t> colors;
 static std::vector<GLushort> indices;
 static size_t vertexCount;
 static size_t indexCount;
+static Shader currentShader = Shader_Default;
 static GLenum currentPrimitiveType;
 static GLuint currentTexture;
+static GLuint framebuffer;
+static GLuint renderbuffer;
+static GLuint renderTargets[MAX_RENDERTARGETS];
+static int framebufferWidth = -1;
+static int framebufferHeight = -1;
 static float currentLineWidth;
 
 static glm::mat4 projectionMatrix;
 static std::vector<std::pair<glm::vec4, uint32_t>> color;
 static std::vector<glm::mat4> modelViewMatrix;
+
+static void loadShader(Shader shader, const std::string& vertex, const std::string& fragment)
+{
+    shaders[shader].handle = openglLoadProgram(vertex, fragment);
+    shaders[shader].attrPosition = glGetAttribLocation(shaders[shader].handle, "aPosition");
+    shaders[shader].attrTexCoord = glGetAttribLocation(shaders[shader].handle, "aTexCoord");
+    shaders[shader].attrColor = glGetAttribLocation(shaders[shader].handle, "aColor");
+    shaders[shader].uniformProjectionMatrix = glGetUniformLocation(shaders[shader].handle, "uProjectionMatrix");
+    shaders[shader].uniformTexture = glGetUniformLocation(shaders[shader].handle, "uTexture");
+
+    for (size_t i = 0; i < MAX_RENDERTARGETS; i++) {
+        std::string name = fmt() << "uAuxTexture" << i;
+        shaders[shader].uniformAuxTexture[i] = glGetUniformLocation(shaders[shader].handle, name.c_str());
+    }
+}
 
 void drawInit()
 {
@@ -59,21 +90,30 @@ void drawInit()
     glBindTexture(GL_TEXTURE_2D, dummyTexture);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, 1, 1, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, &whitePixel);
 
-    shader = openglLoadProgram("DrawV.glsl", "DrawF.glsl");
-    attrPosition = glGetAttribLocation(shader, "aPosition");
-    attrTexCoord = glGetAttribLocation(shader, "aTexCoord");
-    attrColor = glGetAttribLocation(shader, "aColor");
-    uniformProjectionMatrix = glGetUniformLocation(shader, "uProjectionMatrix");
-    uniformTexture = glGetUniformLocation(shader, "uTexture");
+    framebuffer = openglCreateFramebuffer();
+    renderbuffer = openglCreateRenderbuffer();
+    for (size_t i = 0; i < MAX_RENDERTARGETS; i++)
+        renderTargets[i] = openglCreateTexture();
+
+    loadShader(Shader_Default, "DrawV.glsl", "DrawF.glsl");
+    loadShader(Shader_Depth, "DrawDepthV.glsl", "DrawDepthF.glsl");
 }
 
 void drawShutdown()
 {
+    openglDeleteFramebuffer(framebuffer);
+    openglDeleteRenderbuffer(renderbuffer);
+    for (size_t i = 0; i < MAX_RENDERTARGETS; i++)
+        openglDeleteTexture(renderTargets[i]);
+
     openglDeleteTexture(dummyTexture);
+
     openglDeleteBuffer(vertexBuffer);
     openglDeleteBuffer(colorBuffer);
     openglDeleteBuffer(indexBuffer);
-    glDeleteProgram(shader);
+
+    glDeleteProgram(shaders[Shader_Default].handle);
+    glDeleteProgram(shaders[Shader_Depth].handle);
 }
 
 void drawBegin(const glm::mat4& projMatrix)
@@ -140,6 +180,45 @@ void drawPopColor()
     assert(color.size() > 1);
     if (color.size() > 1)
         color.pop_back();
+}
+
+void drawBeginRenderToTexture(int n, int width, int height)
+{
+    drawFlush();
+
+    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+
+    if (framebufferWidth != width || framebufferHeight != height) {
+        framebufferWidth = width;
+        framebufferHeight = height;
+
+        glBindRenderbuffer(GL_RENDERBUFFER, renderbuffer);
+        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, width, height);
+        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, renderbuffer);
+        glBindRenderbuffer(GL_RENDERBUFFER, 0);
+    }
+
+    glBindTexture(GL_TEXTURE_2D, renderTargets[n]);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, renderTargets[n], 0);
+
+    GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+    assert(status == GL_FRAMEBUFFER_COMPLETE);
+}
+
+void drawEndRenderToTexture()
+{
+    drawFlush();
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+void drawSetShader(Shader shader)
+{
+    if (shader != currentShader) {
+        drawFlush();
+        currentShader = shader;
+    }
 }
 
 void drawSetTexture(GLuint texture)
@@ -268,38 +347,75 @@ void drawIndex(GLushort index)
     indices.emplace_back(index);
 }
 
+static void setupUniforms(const ShaderInfo* shader)
+{
+    glUseProgram(shader->handle);
+
+    glLineWidth(currentLineWidth);
+
+    glActiveTexture(GL_TEXTURE0);
+    if (shader->uniformTexture < 0)
+        glBindTexture(GL_TEXTURE_2D, 0);
+    else {
+        glBindTexture(GL_TEXTURE_2D, currentTexture != 0 ? currentTexture : dummyTexture);
+        glUniform1i(shader->uniformTexture, 0);
+    }
+
+    for (size_t i = 0; i < MAX_RENDERTARGETS; i++) {
+        glActiveTexture(GL_TEXTURE1 + int(i));
+        if (shader->uniformAuxTexture[i] < 0)
+            glBindTexture(GL_TEXTURE_2D, 0);
+        else {
+            glBindTexture(GL_TEXTURE_2D, renderTargets[i]);
+            glUniform1i(shader->uniformAuxTexture[i], int(i) + 1);
+        }
+    }
+
+    if (shader->uniformProjectionMatrix >= 0)
+        glUniformMatrix4fv(shader->uniformProjectionMatrix, 1, GL_FALSE, &projectionMatrix[0][0]);
+}
+
 void drawFlush()
 {
     if (vertexCount > 0 || indexCount > 0) {
-        glUseProgram(shader);
+        const ShaderInfo* shader = &shaders[currentShader];
+        setupUniforms(shader);
 
-        glLineWidth(currentLineWidth);
+        if (shader->attrPosition >= 0 || shader->attrTexCoord >= 0) {
+            glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
+            glBufferData(GL_ARRAY_BUFFER,
+                vertexCount * sizeof(GLfloat) * VERTICES_PER_INDEX, vertices.data(), GL_STREAM_DRAW);
 
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, currentTexture != 0 ? currentTexture : dummyTexture);
-        glUniform1i(uniformTexture, 0);
-        glUniformMatrix4fv(uniformProjectionMatrix, 1, GL_FALSE, &projectionMatrix[0][0]);
+            if (shader->attrPosition >= 0) {
+                glVertexAttribPointer(shader->attrPosition, 3, GL_FLOAT, GL_FALSE,
+                    sizeof(GLfloat) * VERTICES_PER_INDEX, (void*)(sizeof(GLfloat) * 0));
+                glEnableVertexAttribArray(shader->attrPosition);
+            }
 
-        glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
-        glBufferData(GL_ARRAY_BUFFER, vertexCount * sizeof(GLfloat) * VERTICES_PER_INDEX, vertices.data(), GL_STREAM_DRAW);
-        glVertexAttribPointer(attrPosition, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * VERTICES_PER_INDEX, (void*)(sizeof(GLfloat) * 0));
-        glVertexAttribPointer(attrTexCoord, 2, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * VERTICES_PER_INDEX, (void*)(sizeof(GLfloat) * 3));
+            if (shader->attrTexCoord >= 0) {
+                glVertexAttribPointer(shader->attrTexCoord, 2, GL_FLOAT, GL_FALSE,
+                    sizeof(GLfloat) * VERTICES_PER_INDEX, (void*)(sizeof(GLfloat) * 3));
+                glEnableVertexAttribArray(shader->attrTexCoord);
+            }
+        }
 
-        glBindBuffer(GL_ARRAY_BUFFER, colorBuffer);
-        glBufferData(GL_ARRAY_BUFFER, vertexCount * sizeof(uint32_t), colors.data(), GL_STREAM_DRAW);
-        glVertexAttribPointer(attrColor, 4, GL_UNSIGNED_BYTE, GL_TRUE, 0, NULL);
-
-        glEnableVertexAttribArray(attrPosition);
-        glEnableVertexAttribArray(attrTexCoord);
-        glEnableVertexAttribArray(attrColor);
+        if (shader->attrColor >= 0) {
+            glBindBuffer(GL_ARRAY_BUFFER, colorBuffer);
+            glBufferData(GL_ARRAY_BUFFER, vertexCount * sizeof(uint32_t), colors.data(), GL_STREAM_DRAW);
+            glVertexAttribPointer(shader->attrColor, 4, GL_UNSIGNED_BYTE, GL_TRUE, 0, NULL);
+            glEnableVertexAttribArray(shader->attrColor);
+        }
 
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer);
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexCount * sizeof(GLushort), indices.data(), GL_STREAM_DRAW);
         glDrawElements(currentPrimitiveType, indexCount, GL_UNSIGNED_SHORT, NULL);
 
-        glDisableVertexAttribArray(attrPosition);
-        glDisableVertexAttribArray(attrTexCoord);
-        glDisableVertexAttribArray(attrColor);
+        if (shader->attrPosition >= 0)
+            glDisableVertexAttribArray(shader->attrPosition);
+        if (shader->attrTexCoord >= 0)
+            glDisableVertexAttribArray(shader->attrTexCoord);
+        if (shader->attrColor >= 0)
+            glDisableVertexAttribArray(shader->attrColor);
 
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
         glBindBuffer(GL_ARRAY_BUFFER, 0);

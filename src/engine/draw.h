@@ -23,6 +23,12 @@
 #include "engine/mesh.h"
 #include <glm/glm.hpp>
 
+enum Shader
+{
+    Shader_Default = 0,
+    Shader_Depth,
+};
+
 void drawInit();
 void drawShutdown();
 
@@ -38,6 +44,10 @@ void drawPushColor(const glm::vec4& c);
 void drawSetColor(const glm::vec4& c);
 void drawPopColor();
 
+void drawBeginRenderToTexture(int n, int width, int height);
+void drawEndRenderToTexture();
+
+void drawSetShader(Shader shader);
 void drawSetTexture(GLuint texture);
 void drawSetLineWidth(float width);
 
